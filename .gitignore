@@ -238,6 +238,11 @@ pythontex-files-*/
 
 # xypic precompiled matrices and outlines
 *.xyc
+
+# Thesis experiment artifacts
+/code/.venv/
+/code/data/
+/code/__pycache__/
 *.xyd
 
 # endfloat

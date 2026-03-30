@@ -1,0 +1,5 @@
+faiss-cpu>=1.8.0
+networkx>=3.4
+PyYAML>=6.0.2
+sentence-transformers>=3.4.1
+tqdm>=4.67.1

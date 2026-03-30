@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taste-skill-experiments"
+version = "0.1.0"
+description = "GitHub-based skill dataset builder for the Taste undergraduate thesis experiments."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "faiss-cpu>=1.8.0",
+  "networkx>=3.4",
+  "PyYAML>=6.0.2",
+  "sentence-transformers>=3.4.1",
+  "tqdm>=4.67.1",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

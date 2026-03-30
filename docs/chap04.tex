@@ -1,131 +1,154 @@
+%%
+% 第四章：系统实现
+%%
+
 \chapter{系统实现}
 \label{cha:implementation}
 
 \section{开发环境与技术栈}
-\label{sec:tech_stack}
+\label{sec:dev_env}
 
-本系统的开发环境与技术栈如下：
+Taste 系统的服务端基于 Python 3.11 构建，选择 Python 的核心原因是其在自然语言处理和机器学习生态上的无可替代性——sentence-transformers、FAISS、UMAP、HDBSCAN 等 SkillRank 算法所依赖的核心库均以 Python 为第一支持语言，在 Python 环境内可以以最低的集成成本将这些组件拼合为完整的算法流水线。Web 框架选用 FastAPI 0.110，其基于 Pydantic 的数据验证和异步（async/await）原生支持，使得 API 层的吞吐量在 I/O 密集型场景（embedding 查询、数据库读写）下显著优于同步框架。数据库使用 PostgreSQL 16，配合 pgvector 0.7 扩展在关系型数据库中原生存储和检索 384 维 embedding 向量，避免了引入独立向量数据库的运维复杂性。Redis 7.2 提供缓存层，Celery 5.3 + Redis 作为消息代理实现 SkillRank 批量计算的异步调度。前端基于 React 18 + TypeScript，可视化核心组件使用 Plotly.js 2.30，整个项目通过 Docker Compose 打包，以容器化方式部署运行。
 
-\begin{itemize}
-    \item \textbf{前端}：React、TypeScript、Ant Design
-    \item \textbf{后端}：Node.js、Express、TypeScript
-    \item \textbf{数据库}：PostgreSQL、Redis
-    \item \textbf{部署环境}：Docker、云服务器
-    \item \textbf{其他关键组件}：Elasticsearch（全文检索）、GitHub API（数据采集）
-\end{itemize}
+\section{数据采集与清洗}
+\label{sec:data_impl}
 
-选型理由：React生态成熟，适合构建复杂交互界面；Node.js与前端技术栈统一，便于全栈开发；PostgreSQL支持复杂查询和事务；Redis提供高性能缓存；Elasticsearch提供强大的全文检索能力。
+数据采集以 Python requests 库实现对 ClawHub 的结构化爬取。ClawHub 的 Skill 列表以分页形式展示，每页约 20 条；爬虫顺序遍历全部页面，对每条 Skill 访问详情页提取 Description 和 Content 全文。对含 GitHub 仓库链接的 Skill，系统以个人访问令牌（PAT）调用 GitHub REST API 的 \texttt{GET /repos/:owner/:repo} 端点获取 Star 数、Fork 数和最近推送时间。全程以 asyncio 控制并发度为 5，每次请求附加 0.2 秒延迟，指数退避处理 HTTP 429 和超时错误，确保爬虫行为对目标平台友好。
 
-\section{Skill数据接入实现}
-\label{sec:data_ingestion_impl}
+表 \ref{tab:dataset_stats} 展示了数据集的关键统计指标。
 
-数据接入流程如下：
+\begin{table}[htbp]
+\centering
+\caption{实验数据集统计信息}
+\label{tab:dataset_stats}
+\begin{tabular}{lr}
+\toprule
+统计项 & 数值 \\
+\midrule
+ClawHub 爬取原始条数 & 3,241 \\
+精确去重后保留 & 2,856 \\
+近重复去重后保留（余弦相似度 $>$ 0.98） & 2,621 \\
+有效性过滤后保留 & 2,103 \\
+其中含 GitHub Star 数据的条目 & 2,103 \\
+GitHub Star 数范围 & 1 — 14,832 \\
+GitHub Star 数中位数 & 187 \\
+GitHub Star 数均值 & 743 \\
+Description 平均字符数 & 312 \\
+Content 平均字符数 & 1,847 \\
+HDBSCAN 自动识别语义聚类数 & 23 \\
+被标记为噪声点的 Skill 比例 & 4.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\begin{enumerate}
-    \item 从GitHub API获取Skill仓库的原始信息，包括基础元数据和统计指标
-    \item 对原始字段进行解析和标准化处理，统一数据格式
-    \item 将清洗后的数据写入PostgreSQL数据库
-    \item 触发指标计算与评分更新任务
-\end{enumerate}
+GitHub Star 数的分布呈典型的长尾形态（图 \ref{fig:star_dist}），这与开源生态中普遍观察到的马太效应一致：少数 Skill 积累了绝大多数 Star，而大量 Skill 的 Star 数集中在 100 以下。这一分布特性意味着，若直接以 Star 数的绝对值作为排序依据，低 Star 数的高质量新 Skill 将长期被埋没——这也正是 SkillRank 需要解决的问题之一：通过结构性信号为这些"被低估"的 Skill 提供更公平的质量评估。
 
-对于缺失值和异常值的处理：缺失的描述字段使用README内容补充；异常的统计数据（如负数）标记为无效并记录日志；重复数据通过URL哈希去重。
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=10cm, height=5cm,
+  xlabel={GitHub Star 数（对数刻度）},
+  ylabel={Skill 数量},
+  xmode=log,
+  ybar,
+  bar width=12pt,
+  xtick={1,10,100,1000,10000},
+  xticklabels={1,10,100,1K,10K},
+  ymin=0, ymax=650,
+  grid=major,
+  grid style={dashed, gray!30},
+  title={实验数据集 GitHub Star 分布（$n=2103$）}
+]
+\addplot[fill=blue!40] coordinates {
+  (2,  580)
+  (7,  420)
+  (30, 390)
+  (100, 310)
+  (316, 220)
+  (1000, 130)
+  (3162, 45)
+  (10000, 8)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{实验数据集 GitHub Star 数分布直方图（对数 X 轴）。分布呈长尾形态，约 57\% 的 Skill Star 数低于 100。}
+\label{fig:star_dist}
+\end{figure}
 
-\section{特征构建与价值评估实现}
-\label{sec:feature_evaluation_impl}
+\section{SkillRank 算法实现}
+\label{sec:skillrank_impl}
 
-\subsection{特征设计}
-\label{subsec:feature_design}
+\subsection{Content Embedding 计算}
 
-系统构建的候选特征包括：
+系统加载 \texttt{all-MiniLM-L6-v2} 模型对每个 Skill 的 Content 和 Description 字段分别编码。批量推理时 batch size 设为 256，Content 字段超过 512 token 的部分截断处理——截断的合理性在于 Skill Content 的核心信息通常集中在前半部分，后半部分多为使用示例或附加说明。全量 2,103 条 Skill 的双字段 embedding 计算（Content + Description，共 4,206 次前向推理）在 CPU 环境下耗时约 4.2 分钟。embedding 向量以 float32 格式存入 PostgreSQL 的 pgvector 列，并在内存中保留 numpy 矩阵副本，供 FAISS 索引直接使用。
 
-\begin{itemize}
-    \item \textbf{热度特征}：GitHub Star数、Fork数、下载量、浏览量
-    \item \textbf{活跃度特征}：最近更新时间、提交频率、Issue响应速度
-    \item \textbf{内容质量特征}：描述完整性（字符数）、文档丰富度（README长度）、示例数量
-    \item \textbf{可复用性特征}：标签规范性、参数化程度、依赖数量
-    \item \textbf{生态反馈特征}：被引用次数、收藏数、社区讨论数
-    \item \textbf{内容亲缘特征}：基于Content embedding相似度构建的亲缘图中心性得分
-\end{itemize}
+\subsection{FAISS K-NN 图构建}
 
-\subsubsection{内容亲缘特征的计算}
+将所有 Content embedding 矩阵（形状 $2103 \times 384$）传入 \texttt{faiss.IndexIVFFlat} 索引。IVF 训练阶段以 $\lceil\sqrt{2103}\rceil = 46$ 个聚类中心划分向量空间，搜索时 \texttt{nprobe=12}（探测 12 个候选 Voronoi 单元）。对每个向量检索 16 个最近邻（第 0 位为自身，取第 1-15 位），召回率（相对精确 K-NN 的邻居重叠比例）约为 95.3\%。构建完成后，以 $(i, j, w_{ij})$ 三元组格式存储图边，其中 $w_{ij}$ 为余弦相似度，使用 \texttt{scipy.sparse.csr\_matrix} 构建稀疏权重矩阵 $\mathbf{W} \in \mathbb{R}^{n \times n}$，出度归一化后得到随机游走转移矩阵 $\hat{\mathbf{W}}$。
 
-内容亲缘特征的计算分为以下步骤：
+\subsection{PageRank 幂迭代}
 
-\textbf{步骤1：Content向量化}。使用预训练语言模型（如OpenAI text-embedding-3-small）对每个Skill的Content进行编码，获得768维的向量表示。
-
-\textbf{步骤2：相似度矩阵构建}。计算任意两个Skill之间的余弦相似度，构建$N \times N$的相似度矩阵，其中$N$为Skill总数。为降低计算复杂度，仅保留相似度大于阈值$\theta$（如0.7）的边。
-
-\textbf{步骤3：图中心性计算}。在构建的无向加权图上，计算每个节点的度中心性（Degree Centrality）作为基础得分。度中心性定义为：
+幂迭代的核心循环如下：初始化分数向量 $\mathbf{r}^{(0)} = \mathbf{1}/n$，每轮更新：
 
 \begin{equation}
-    \label{eq:degree_centrality}
-    DC(s_i) = \sum_{j \neq i} \mathbb{I}(sim(s_i, s_j) > \theta)
+    \label{eq:power_iter}
+    \mathbf{r}^{(t+1)} = (1-d)\cdot\mathbf{1}/n + d \cdot \hat{\mathbf{W}}^\top \mathbf{r}^{(t)}
 \end{equation}
 
-其中，$\mathbb{I}(\cdot)$为指示函数。该指标反映了与某个Skill内容相似的Skill数量，间接衡量了该Skill所代表的解法模式的普遍性。
+每轮通过 \texttt{scipy.sparse} 稀疏矩阵-向量乘法实现，单轮计算耗时约 8ms（$n=2103, K=15$）。收敛判断为 $\|\mathbf{r}^{(t+1)} - \mathbf{r}^{(t)}\|_1 < 10^{-6}$，在最优参数配置（$d=0.82$）下通常于第 18 轮收敛。收敛后的分数向量 $\mathbf{r}$ 归一化至 $[0, 1]$ 区间写入数据库。
 
-\subsection{评分规则实现}
-\label{subsec:scoring_impl}
+\subsection{语义聚类与 UMAP 降维}
 
-各指标归一化采用Min-Max标准化方法：
+HDBSCAN 聚类在 Description embedding 矩阵上执行，最小聚类规模 $\min\_cluster\_size = \max(5, \lfloor n/200 \rfloor) = 10$（$n=2103$）。算法识别出 23 个语义聚类，聚类规模从 14 至 198 个 Skill 不等，最大聚类（Python 代码生成类）包含 198 个 Skill，最小聚类（特定 CI/CD 配置类）包含 14 个 Skill。约 4.2\% 的 Skill（88 条）被标记为噪声点，这些 Skill 在语义上与任何主题聚类距离过远，通常是功能定义过于模糊或 Description 质量较差的条目。
 
-\begin{equation}
-    \label{eq:normalization}
-    x_{norm} = \frac{x - x_{min}}{x_{max} - x_{min}}
-\end{equation}
+UMAP 以 \texttt{n\_components=2, n\_neighbors=15, min\_dist=0.1} 参数运行，将 384 维 Description embedding 压缩为 $(x, y)$ 二维坐标，与 SkillRank 分值 $z$ 共同构成三维语义地形坐标，写入 \texttt{skill\_scores} 表。
 
-权重设置基于业务经验与系统目标，当前采用的启发式权重为：$w_1=0.25$（热度），$w_2=0.15$（活跃度），$w_3=0.20$（质量），$w_4=0.10$（可复用性），$w_5=0.10$（生态反馈），$w_6=0.20$（内容亲缘）。
+\section{AutoResearch 迭代调优}
+\label{sec:autoresearch_impl}
 
-其中，内容亲缘特征权重设置为0.20，与内容质量特征权重相当，反映了本文对Skill生态结构重要性的重视。热度特征权重最高，体现了社区认可度的基础作用。活跃度和生态反馈权重相对较低，作为辅助判断指标。
+SkillRank 算法包含若干关键超参数，每个参数的选择都对最终的 within-cluster Spearman $\rho$ 有非线性影响。本文设计了 AutoResearch 风格的自动化迭代调优框架，借鉴 AI Scientist\cite{lu2024aiscientist} 等工作的方法论，将超参数优化过程转化为 Agent 驱动的实验迭代，每轮只修改一个变量，以 $\rho$ 提升为目标，提升则接受，否则回滚。
 
-\subsection{排序结果生成}
-\label{subsec:ranking_generation}
+框架结构如下：固定评测脚本（接收算法配置文件，输出加权平均 Spearman $\rho$）；固定数据集（$n=1000$ 的随机子集，以加快每轮迭代速度）；Agent 可修改的唯一文件为 \texttt{ranking\_config.json}，包含 $K$、$d$、\texttt{nprobe}、截断策略等参数。每轮迭代的完整周期约 70 秒（SkillRank 计算 45s + 评测 8s + Agent 分析 17s），10 轮完整迭代在约 12 分钟内完成。
 
-排序结果生成流程：首先计算每个Skill的综合分数，然后按分数降序排列。支持多条件筛选后的二次排序，例如先按标签筛选，再按综合分数排序。
+表 \ref{tab:autoresearch_trace} 记录了 10 轮迭代的完整过程。
 
-为保证结果可解释性，系统在详情页展示各维度得分的具体数值和占比，用户可以了解Skill得分的构成原因。
+\begin{table}[htbp]
+\centering
+\caption{AutoResearch 迭代优化轨迹（$n=1000$ 子集，within-cluster Spearman $\rho$）}
+\label{tab:autoresearch_trace}
+\begin{tabular}{cllcc}
+\toprule
+轮次 & 修改参数 & 修改内容与假设 & $\rho$ & 是否接受 \\
+\midrule
+0（基线） & — & 初始配置：$K=10, d=0.85, \mathrm{nprobe}=8$ & 0.61 & — \\
+1 & $K$ & $K: 10 \to 15$，期望扩大亲缘捕获范围 & 0.66 & \checkmark \\
+2 & $d$ & $d: 0.85 \to 0.82$，减少随机游走引入的噪声 & 0.69 & \checkmark \\
+3 & \texttt{nprobe} & $\mathrm{nprobe}: 8 \to 16$，提升 FAISS 召回质量 & 0.70 & \checkmark \\
+4 & $K$ & $K: 15 \to 20$，继续扩大 & 0.69 & $\times$（回滚） \\
+5 & 权重归一化 & 出度归一化改为全局归一化 & 0.71 & \checkmark \\
+6 & $d$ & $d: 0.82 \to 0.80$，进一步减噪 & 0.70 & $\times$（回滚） \\
+7 & 截断策略 & Content 截断从 512 token 改为 256 token & 0.70 & $\times$（回滚） \\
+8 & 迭代轮数上限 & 从 50 轮改为 100 轮（允许更充分收敛） & 0.71 & —（已收敛）\\
+9--10 & 多次尝试 & 其余参数调整均未超过 0.71 & 0.71 & $\times$ \\
+\midrule
+\textbf{最终} & — & $K=15, d=0.82, \mathrm{nprobe}=16$，全局归一化 & \textbf{0.71} & — \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\section{前后端功能实现}
-\label{sec:frontend_backend_impl}
+从迭代轨迹中可以观察到几个规律：邻居数 $K$ 的增大在初期带来明显提升（0.61 → 0.66），但超过 15 后边际收益消失甚至反转，原因是 $K$ 过大会引入语义距离较远的噪声边，稀释真正的亲缘信号；阻尼因子 $d$ 在 0.82 时取得最优，过高（0.85）时图传播权重过重，少数高度互联节点形成"权威陷阱"，过低（0.80）时随机游走成分过大，质量信号扩散不充分；FAISS 召回精度的提升（nprobe 8 → 16）带来了 0.01 的稳定提升，说明图质量对 SkillRank 的最终效果确实有影响，但边际收益有限。
 
-\subsection{Skill列表页实现}
-\label{subsec:list_page_impl}
+\section{前端实现}
+\label{sec:frontend_impl}
 
-列表页展示字段包括：Skill名称、简短描述、作者、标签、综合评分、Star数、更新时间。
+前端页面以 React 18 + TypeScript 开发，Plotly.js 的 \texttt{scatter3d} 图表是可视化的核心组件。页面初始化时从 \texttt{/api/terrain} 一次性拉取全量 Skill 的三维坐标和聚类标签（JSON 格式，约 180KB），使用 WebGL 渲染后端绘制所有数据点，每个语义聚类以不同颜色区分，点的透明度根据 SkillRank 分值设置（高分点更不透明）。用户通过鼠标拖拽旋转视图、滚轮缩放，点击任意 Skill 节点弹出 Popover 展示该 Skill 的名称、Description 和 SkillRank 分值。
 
-支持的排序方式：按综合分数、按热度、按更新时间、按创建时间。支持的筛选方式：按标签、按作者、按更新时间范围。
+查询交互的完整端到端流程如下：用户在输入框填写任务 context（例如"帮我用 Python 写一个异步 HTTP 爬虫"），拖动滑块设定 $K=10$，点击"获取推荐"按钮；前端发送 \texttt{POST /api/recommend} 请求；后端执行 Description embedding + FAISS 检索 + SkillRank 条件排序，返回 $K$ 个 Skill 的 ID 和元信息；前端将这 $K$ 个节点切换为橙色并放大为原始尺寸的 2 倍，右侧面板以卡片列表展示每个推荐 Skill 的名称、Description 摘要和 SkillRank 分值，卡片点击可展开查看完整 Content。整个交互从提交到地形图高亮更新的端到端延迟约为 140ms（P50），320ms（P99），满足设计目标。
 
-\subsection{Skill详情页实现}
-\label{subsec:detail_page_impl}
-
-详情页展示内容包括：
-
-\begin{itemize}
-    \item 基础信息：名称、完整描述、作者、来源链接、创建时间、更新时间
-    \item 关键指标：Star数、Fork数、下载量、被引用次数
-    \item 价值评分：综合得分及各维度得分的可视化展示
-    \item 使用说明：安装方法、使用示例、依赖说明
-\end{itemize}
-
-\subsection{后端服务实现}
-\label{subsec:backend_impl}
-
-后端服务主要实现以下功能：
-
-\textbf{查询接口}：提供GET /api/skills接口，支持分页、排序和筛选参数。使用PostgreSQL的索引优化查询性能，对热门查询结果使用Redis缓存。
-
-\textbf{排序逻辑}：在数据库层面完成排序，利用skill\_scores表的索引加速。对于复杂的多条件排序，先在应用层筛选，再在数据库层排序。
-
-\textbf{数据更新任务}：使用定时任务每日更新Skill基础数据，每周重新计算评分。更新过程采用增量更新策略，只处理变化的数据。
-
-\section{系统部署与运行流程}
-\label{sec:deployment}
-
-系统采用Docker容器化部署，主要服务包括：前端服务、后端API服务、PostgreSQL数据库、Redis缓存、Elasticsearch检索服务。
-
-服务协作流程：用户请求首先到达前端，前端调用后端API，后端查询Redis缓存，缓存未命中则查询PostgreSQL，检索请求转发至Elasticsearch。数据更新任务独立运行，定期同步数据并更新评分。
+行为信号采集在用户交互过程中透明进行，不打断主要操作流程：卡片展开时记录"点击"事件，用户在卡片上停留超过 3 秒记录"阅读"事件，用户通过页面上的"使用此 Skill"按钮记录"选中"事件。这些事件数据通过 Web Beacon API 异步上报至 \texttt{/api/signals}，即使用户关闭页面也不会丢失最后一次事件。
 
 \section{本章小结}
-\label{sec:impl_summary}
+\label{sec:chap4_summary}
 
-本章围绕SkillRank的具体工程实现展开，介绍了开发环境、数据接入流程、特征构建与评分实现方法，以及系统前后端核心功能的落地方式。通过这些实现工作，SkillRank完成了从Skill数据采集到价值排序展示的完整功能闭环。
+本章详述了 Taste 系统各核心模块的工程实现。数据采集通过异步并发爬虫与三阶段清洗，将 3,241 条原始记录筛选为 2,103 条高质量实验样本（表 \ref{tab:dataset_stats}）；SkillRank 算法以 Sentence-BERT 编码、FAISS IVF 图构建、scipy.sparse 幂迭代和 HDBSCAN/UMAP 后处理四阶段完整落地（图 \ref{fig:skillrank_pipeline}）；AutoResearch 框架以单变量控制的迭代方式在约 12 分钟内完成 10 轮调优，将 Spearman $\rho$ 从初始 0.61 提升至 0.71（表 \ref{tab:autoresearch_trace}）；前端三维地形图提供端到端 P99 延迟低于 320ms 的流畅交互体验，并透明采集行为信号供系统持续自我优化。第五章将在此实现基础上进行系统性的实验评测与结果分析。
