@@ -1,125 +1,159 @@
-\chapter{\LaTeX 模板配置与使用}
+\chapter{系统总体设计}
+\label{cha:system_design}
 
+\section{系统设计目标}
+\label{sec:design_goals}
 
-\label{cha:sysu-thesis-latex-install-guide}
+SkillRank的系统设计目标主要包括以下几个方面：
 
-本部分内容将让你能够通过本\LaTeX 模板生成一份可用的pdf，并为后面修改源码撰写毕设做准备。
+\begin{itemize}
+    \item 支持大规模Skill数据的统一接入与管理；
+    \item 支持多维特征建模与综合价值评估；
+    \item 支持面向用户查询场景的筛选、排序与详情展示；
+    \item 保证系统架构清晰，便于后续扩展与维护。
+\end{itemize}
 
-首先，我们会展示最简单的方法：直接使用overleaf进行编写。然后，我们整理了不同环境下\LaTeX 环境的配置指南与不同写作工具的配置技巧，方便各位同学使用本\LaTeX 模板。最后，我们说明了如何开始编写自己的毕业论文（设计）。
+\section{系统总体架构}
+\label{sec:system_architecture}
 
+SkillRank采用分层式云端系统架构。数据接入层负责从外部平台或数据源收集Skill相关信息，并完成原始数据的拉取与同步；数据处理层负责元数据清洗、字段统一和特征抽取；价值评估层根据预设指标体系计算Skill综合评分；服务接口层向前端提供查询、筛选、排序和详情访问能力；前端展示层面向最终用户提供可视化交互界面。各模块分工清晰，能够较好支撑Skill数据从采集到展示的完整闭环。
 
-\section{使用Overleaf编写毕设}
-
-Overleaf\footnote{网址可见\url{https://www.overleaf.com/}}是一个在线的Latex文档协作平台。我们不需要配置任何环境，便能够在上面直接使用本模板进行写作。操作步骤如下：
-
-第一步，下载本项目压缩包（从\url{https://github.com/SYSU-SCC/sysu-thesis/releases}处下载即可），注意需要下载zip格式的压缩包。
-然后，我们在Overleaf上新建项目，并上传该压缩包，可参考\autoref{fig:overleaf-new-proj}。
-
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.2\textwidth]{image/chap03/overleaf-create-proj.jpg}
-	\includegraphics[width=0.7\textwidth]{image/chap03/overleaf-upload-proj.jpg}
-	\caption{在Overleaf上创建并上传压缩包。}
-	\label{fig:overleaf-new-proj}
-\end{figure}
-
-第二步，在Overleaf的菜单中调整编译工具为\texttt{xelatex}，可参考\autoref{fig:overleaf-config}。
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.6\textwidth]{image/chap03/overleaf-config.jpg}
-	\caption{在Overleaf上调整编译工具}
-	\label{fig:overleaf-config}
-\end{figure}
-
-
-第三步，点击编译，得到本pdf，可以开始修改pdf了！最终可见\autoref{fig:overleaf-example}。
-
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.9\textwidth]{image/chap03/overleaf-example.jpg}
-	\caption{Overleaf使用例子}
-	\label{fig:overleaf-example}
-\end{figure}
-
-
-
-\section{编译环境配置}
-
-编译环境配置相对来说比较简单，下载Tex Live2020并如同一般的程序一样安装即可。
-
-\subsection{编译环境配置：Window篇}
-
-在\url{https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/Images/}上下载Tex Live2020并参考教程\footnote{可以参考\url{https://zhuanlan.zhihu.com/p/58811994}}安装即可。
-
-\subsection{编译环境配置：Linux篇}
-
-在\url{https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/Images/}上下载Tex Live2020并参考教程\footnote{可以参考\url{https://zhuanlan.zhihu.com/p/55894177}}安装即可。
-
-
-\subsection{编译环境配置：MacOS篇}
-
-在MacOS上配置Latex的环境，这里我们使用的是MacTex。
+系统架构可分为以下五层：
 
 \begin{enumerate}
-	\item \url{https://www.tug.org/mactex/}下载MacTex安装。
-	\item 安装步骤：不详细展开，按照图形界面点击即可, 傻瓜式安装。
+    \item \textbf{数据接入层}：负责从GitHub、社区平台等数据源获取Skill原始信息
+    \item \textbf{数据处理层}：完成数据清洗、标准化和特征提取
+    \item \textbf{价值评估层}：基于多维特征计算Skill综合评分
+    \item \textbf{服务接口层}：提供RESTful API支持查询、筛选和排序
+    \item \textbf{前端展示层}：提供用户交互界面和可视化展示
 \end{enumerate}
 
-TIPS：MacTex文件比较大，有2G多，介意的话可以选择MacTex\_Basic包，只有100M以内，但是如果安装MacTex\_Basic，后期可能会遇到各种缺包的问题。
+\section{系统功能模块设计}
+\label{sec:functional_modules}
 
+\subsection{Skill数据接入模块}
+\label{subsec:data_ingestion}
 
-安装完成之后，可以简单测试一下安装是否成功。如可以查看Texshop应用是否安装好，或者在命令行测试一下\texttt{xelatex}命令是否可用。
+数据接入模块负责从多个数据源获取Skill信息。主要数据来源包括GitHub仓库、技能市场平台和社区分享。数据拉取采用定期同步机制，每日更新一次基础信息，每周更新一次统计指标。
 
-\section{写作环境配置}
+数据清洗规则包括：去除重复Skill、标准化字段格式、处理缺失值、过滤无效数据。异常处理方式采用日志记录和人工审核相结合的方式，确保数据质量。
 
-不同的写作工具对应不同的写作环境。这里我们给出几个工具的配置例子以供参考。
+\subsection{Skill元数据管理模块}
+\label{subsec:metadata_management}
 
-\subsection{模板编译流程}
+元数据管理模块存储Skill的核心信息，包括：Skill名称、描述、作者、来源链接、创建时间、更新时间、分类标签、依赖关系等。
 
-由于\LaTeX 的限制，本模板需要经过四次编译才能生成完整的论文：
+对于标签、作者、描述等信息，系统进行标准化处理：统一标签命名规范、去重作者信息、规范化描述格式。通过哈希值和内容相似度进行去重判断，确保数据一致性。
+
+\subsection{价值评估与排序模块}
+\label{subsec:value_evaluation}
+
+价值评估与排序模块是SkillRank系统的核心。本模块的设计基于对Agent Skill特性的深入分析，将Skill价值评估问题分解为两个相互独立但互补的维度：需求匹配维度与内容质量维度。
+
+\subsubsection{问题建模}
+
+在Agent Skill生态中，每个Skill可以形式化表示为一个二元组：
+
+\begin{equation}
+    \label{eq:skill_structure}
+    Skill = \langle Description, Content \rangle
+\end{equation}
+
+其中，Description作为触发器（Trigger），决定Skill是否被匹配到特定需求；Content作为信息载体，决定Skill被使用后对Agent输出质量的实际影响。这种二元结构类似于传统信息检索中的"索引-文档"关系，但在Agent场景下具有独特的语义特征。
+
+借鉴PageRank算法的核心思想，本文提出基于内容亲缘关系的Skill价值评估机制。PageRank通过网页间的超链接关系评估网页价值，其核心假设是：被更多网页链接的网页更重要，被高质量网页链接的网页更重要。类比到Skill场景，本文提出如下假设：
+
+\begin{itemize}
+    \item 假设1：Content相似度高的Skill之间存在"亲缘关系"，反映了某种被广泛认可的解法模式
+    \item 假设2：被更多Skill的Content引用或模仿的Skill，代表了更基础、更通用的能力封装
+    \item 假设3：与高质量Skill具有高Content相似度的Skill，其自身质量也更可能较高
+\end{itemize}
+
+基于上述假设，本文将Skill价值评估问题建模为需求空间中的"地形分布"问题。在以Description embedding为坐标的需求空间中，每个Skill占据特定位置，其Content质量决定该位置的"高度"。高质量Skill在需求空间中形成"高峰"，而相似需求区域内的Skill质量分布构成连续的"地形"。
+
+\subsubsection{评分维度设计}
+
+基于上述建模，本系统的评分机制包含以下维度：
 
 \begin{enumerate}
-	\item 先使用xelatex编译一次
-	\item 再使用bibtex编译一次
-	\item 然后使用xelatex编译两次
+    \item \textbf{热度特征（Popularity）}：包括GitHub Star数、Fork数、下载量、浏览量等指标，反映Skill的社区认可度
+    \item \textbf{活跃度特征（Activity）}：包括最近更新时间、提交频率、维护状态等，反映Skill的生命力
+    \item \textbf{内容质量特征（Quality）}：包括描述完整性、文档丰富度、示例数量、代码质量等，反映Skill的可用性
+    \item \textbf{可复用性特征（Reusability）}：包括标签规范性、参数化程度、适用场景广度、依赖复杂度等，反映Skill的通用性
+    \item \textbf{生态反馈特征（Feedback）}：包括被引用次数、收藏数、社区讨论热度等，反映Skill的实际使用情况
+    \item \textbf{内容亲缘特征（Content Affinity）}：基于Content相似度构建的亲缘图，通过图算法计算Skill在生态中的结构重要性
 \end{enumerate}
 
-本编译流程已经写在Makefile中，修改模板源码后只需要执行\texttt{make main}即可按照该流程进行编译并生成最终的pdf。
+综合评分公式采用加权求和方式：
 
+\begin{equation}
+    \label{eq:skill_score}
+    Score(skill) = \sum_{i=1}^{6} w_i \cdot F_i(skill)
+\end{equation}
 
+其中，$F_i$表示第$i$个维度的归一化特征值，$w_i$为对应权重，满足$\sum_{i=1}^{6} w_i = 1$。
 
-\subsection{写作环境配置：Visual Studio Code}
+\subsubsection{内容亲缘图构建}
 
-Visual Studio Code是微软公司推出的轻量代码编辑器，我们可以做一些简单的配置，便可以用该编辑器修改我们的\LaTeX 模板，并实现一键编译。
+内容亲缘特征的计算基于Skill间的Content相似度图。对于任意两个Skill $s_i$和$s_j$，其Content相似度定义为：
 
-\begin{enumerate}
-	\item 安装 Visual Studio Code。
-	\item 安装 LaTeX Workshop 插件。
-\end{enumerate}
+\begin{equation}
+    \label{eq:content_similarity}
+    sim(s_i, s_j) = \frac{emb(Content_i) \cdot emb(Content_j)}{\|emb(Content_i)\| \cdot \|emb(Content_j)\|}
+\end{equation}
 
-本项目的\texttt{.vscode/setting.json}下已经包含了与前面所述编译流程相同的配置。正常配置下，每次修改模板源码后按下保存（Ctrl+S），就能够自动进行编译产生pdf。效果图如\autoref{fig:vscode-example}所示。
+其中，$emb(\cdot)$表示Content的向量表示（通过预训练语言模型获得）。基于相似度矩阵，构建无向加权图$G = (V, E)$，其中$V$为Skill集合，边权重为Content相似度。在此图上应用图中心性算法（如Degree Centrality、Betweenness Centrality或改进的PageRank），计算每个Skill的结构重要性得分。
 
+排序结果根据综合分数从高到低生成，支持多条件筛选后的二次排序，确保结果的可解释性和合理性。
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\linewidth]{image/chap03/vscode-example.png}
-	\caption{vscode配置好后的样例}
-	\label{fig:vscode-example}
-\end{figure}
+\subsection{查询与展示模块}
+\label{subsec:query_display}
 
+查询与展示模块为用户提供灵活的检索和浏览功能，主要包括：
 
-\section{如何开始写毕业论文（设计）}
+\begin{itemize}
+    \item \textbf{关键词搜索}：支持对Skill名称、描述、标签进行全文检索
+    \item \textbf{标签筛选}：支持按分类标签、技术栈、应用场景等维度过滤
+    \item \textbf{多维排序}：支持按综合分数、热度、活跃度、更新时间等排序
+    \item \textbf{详情查看}：展示Skill的完整信息、关键指标和价值评分构成
+\end{itemize}
 
-首先将所有个人信息，包括学号、姓名、专业、论文题目等，在\texttt{./docs/info.tex}中逐项进行更新。
+\section{数据库设计}
+\label{sec:database_design}
 
-然后我们再编辑\texttt{./docs/abstract.tex}补充论文摘要。
+系统采用关系型数据库存储Skill相关数据，核心表结构如下：
 
-到了论文主体部分，我们可以自行编辑\texttt{./docs/chap01.tex}，\texttt{./docs/chap02.tex}等文件进行编辑。如果章数不够，可以自行修改\texttt{main.tex}增加新的章节。
+\textbf{skills表}：保存Skill的基础信息，包括Skill名称、描述、来源链接、作者、创建时间、更新时间、分类标签和状态等字段。
 
-当论文主体编写完成后，我们再编辑\texttt{./docs/ack.tex}作为论文致谢。
+\textbf{skill\_tags表}：存储Skill与标签的多对多关系，支持灵活的标签管理和检索。
 
+\textbf{skill\_metrics表}：记录Skill的各项统计指标，如Star数、Fork数、下载量、浏览量等，支持历史数据追踪。
 
-% 首先将个人信息写到\texttt{./docs/info.tex}中。
+\textbf{skill\_scores表}：存储Skill的价值评分结果，包括各维度得分和综合得分，便于快速排序查询。
+
+\textbf{authors表}：管理Skill作者信息，包括作者名称、联系方式、贡献统计等。
+
+\section{接口设计}
+\label{sec:api_design}
+
+系统提供RESTful API接口，支持前端和第三方应用访问。核心接口如下：
+
+\begin{table}[!htbp]
+    \centering
+    \caption{系统核心接口}
+    \label{tab:api_list}
+    \begin{tabular}{|l|l|l|}
+        \hline
+        \textbf{接口名称} & \textbf{请求方式} & \textbf{功能说明} \\ \hline
+        /api/skills & GET & 获取Skill列表 \\ \hline
+        /api/skills/\{id\} & GET & 获取Skill详情 \\ \hline
+        /api/skills/search & GET & 按条件查询Skill \\ \hline
+        /api/scores/refresh & POST & 刷新评分结果 \\ \hline
+        /api/tags & GET & 获取标签列表 \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{本章小结}
+\label{sec:design_summary}
+
+本章从系统目标、总体架构、功能模块、数据库设计和接口设计等方面给出了SkillRank的总体设计方案。通过分层架构和模块化设计，系统能够支持大规模Skill数据的接入、组织、评估与展示，为后续系统实现提供了结构基础。

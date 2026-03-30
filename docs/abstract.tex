@@ -1,18 +1,29 @@
 % !TeX root = ../main.tex
 
 \sysusetup{
-  keywords  = {本科毕业论文，\LaTeX\ 模板，中山大学},
-  keywords* = {undergraduate thesis, \LaTeX\ template, Sun Yat-Sen University},
+  keywords  = {Agent，Skill，价值发现，排序系统，云端系统},
+  keywords* = {Agent, Skill, value discovery, ranking system, cloud system},
   keywords** = {Mémoire de bachelor, L'Abstract, Mots-clés},
 }
 
 \begin{abstract}
-  摘要应概括论文的主要信息，应具有独立性和自含性，即不阅读论文的全文，就能获得必要的信息。摘要内容一般应包括研究目的、内容、方法、成果和结论，要突出论文的创造性成果或新见解，不要与绪论相混淆。语言力求精练、准确，以300-500字为宜。关键词是供检索用的主题词条，应体现论文特色，具有语义性，在论文中有明确的出处，并应尽量采用《汉语主题词表》或各专业主题词表提供的规范词。关键词与摘要应在同一页，在摘要的下方另起一行注明，一般列3-5个，按词条的外延层次排列（外延大的排在前面）。
+  随着大语言模型与智能体技术的发展，围绕Agent Skill的开发、共享与复用逐渐形成生态。越来越多的开发者将工具调用、任务编排、工作流模板和领域能力封装为可复用的Skill，并通过代码仓库、社区平台或应用市场进行分发。然而，在Skill数量快速增长的背景下，用户往往面临发现成本高、筛选效率低和价值判断困难等问题。现有平台通常侧重于关键词检索或简单列表展示，缺少面向大规模Skill的系统化价值评估与排序机制，导致高质量Skill难以及时被识别和复用。
 
+  针对上述问题，本文设计并实现了一个面向大规模Agent Skill价值发现的云端系统SkillRank。该系统围绕Skill数据接入、元数据解析、特征构建、综合评分、排序展示与查询服务等关键环节展开，形成了较为完整的云端处理流程。在方法上，本文首先将Skill形式化为Description-Content二元结构，区分需求匹配维度与内容质量维度；进而提出基于Content亲缘关系的价值评估机制，通过语义相似度构建隐式亲缘图，借鉴PageRank思想实现价值传递；最后结合热度、活跃度、生态反馈等多维特征，构建综合排序体系，以提升高价值Skill的发现效率。
+
+  在系统实现方面，本文完成了SkillRank原型系统的前后端与云端服务开发，实现了Skill数据管理、条件筛选、结果排序、详情查看和价值分析等核心功能。通过功能验证与案例分析可以看出，所设计系统能够较好支持面向大规模Skill集合的组织与发现任务，并为Agent Skill生态中的能力沉淀、复用和传播提供技术支撑。
+
+  本文的工作表明，面向Agent Skill的价值发现问题具有较强的研究意义和应用价值，SkillRank在系统设计与工程实现层面具备一定可行性。未来可进一步围绕多源数据融合、动态反馈建模和个性化排序等方向开展深入研究。
 \end{abstract}
 
 \begin{abstract*}
-  The content of the English abstract is the same as the Chinese abstract, 250-400 content words are appropriate. Start another line below the abstract to indicate English keywords (Keywords 3-5).
+  With the rapid development of large language models and intelligent agents, reusable Agent Skills have become an important carrier for encapsulating tools, workflows, and domain capabilities. As the number of available skills continues to grow, users face increasing difficulty in discovering high-value skills efficiently. Existing platforms mainly rely on keyword-based retrieval or simple list presentation, and lack a systematic mechanism for large-scale skill value evaluation and ranking. As a result, high-quality skills are often difficult to identify, compare, and reuse.
+
+  To address this problem, this thesis designs and implements SkillRank, a cloud-based system for value discovery of Agent Skills at scale. The system covers the full pipeline of skill data ingestion, metadata parsing, feature construction, value scoring, ranking, and query services. Methodologically, this work first formalizes Skills as a Description-Content dual structure, distinguishing between demand matching and content quality dimensions. It then proposes a content affinity-based value evaluation mechanism, constructing an implicit affinity graph through semantic similarity and applying PageRank-inspired value propagation. Finally, a comprehensive ranking framework is established by integrating multi-dimensional features including popularity, activity, ecosystem feedback, and content affinity, to improve the efficiency of discovering valuable skills.
+
+  In terms of implementation, a prototype of SkillRank is developed with cloud services and front-end/back-end modules, supporting core functions including skill management, filtering, ranking, detailed inspection, and value analysis. Functional verification and case studies show that the proposed system can effectively support the organization and discovery of large-scale Agent Skill collections, and provide technical support for capability accumulation, reuse, and dissemination in the Agent Skill ecosystem.
+
+  The results indicate that the problem of Agent Skill value discovery is both practically important and academically meaningful. SkillRank demonstrates feasibility in system design and engineering implementation. Future work can further explore multi-source data fusion, dynamic feedback modeling, and personalized ranking strategies.
 \end{abstract*}
 
 % 法语（第三种语言）摘要，本科不需要就全部注释掉即可，研究生请直接注释

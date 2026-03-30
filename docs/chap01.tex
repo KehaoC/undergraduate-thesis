@@ -6,34 +6,111 @@
 %%
 
 \chapter{绪论}
-%定义，过去的研究和现在的研究，意义，与图像分割的不同,going deeper
 \label{cha:introduction}
+
 \section{选题背景与意义}
 \label{sec:background}
-% What is the problem
-% why is it interesting and important
-% Why is it hards, why do naive approaches fails
-% why hasn't it been solved before
-% what are the key components of my approach and results, also include any specific limitations，do not repeat the abstract
-%contribution
-引言是论文正文的开端，应包括毕业论文选题的背景、目的和意义；对国内外研究现状和相关领域中已有的研究成果的简要评述；介绍本项研究工作研究设想、研究方法或实验设计、理论依据或实验基础；涉及范围和预期结果等。要求言简意赅，注意不要与摘要雷同或成为摘要的注解。
+
+Actionable Agent的出现让人工智能进入了一个新的时代转折点。以闭源的Codex、Claude Code、Manus，和开源的OpenClaw等通用类Agent正在逐渐接入越来越多的系统和工具。它们的基座模型大多是编码特训模型，在训练期间包含大量的终端相关命令行数据，而命令行本身就是操作计算机的原语。其底层Agent Loop以Agent为核心，接入Skill、MCP、Tools等工具来拓展Agent能力边界，已成为应用生态的主流。
+
+目前OpenClaw在GitHub上已有超过XX万Star，超越了React和Linux等知名项目。而Skill生态也萌生了巨大的增长潜力，有望成为新时代Agentware的必要访问方式。
+
+人们在使用Agent时，必不可少的就是配置各种各样的Skill来拓展Agent的能力边界。每一个Skill都是一次Agent能力的升级。然而，当前Skill应用存在许多关键性问题。
+
+\textbf{Skill太多，如何找到有用的那个？}
+
+正如在互联网诞生之初，无数网页中如何找到最有用的那个？而由于使用Skill的主体不是人而是Agent，问题变得更加有趣。因为Agent本身具有信息处理能力，且能力强于人类，但Agent又受限于上下文窗口，同时意图判断存在随机性。
+
+Skill太多，大量重复，质量良莠不齐，如何找到当前目标下最有用的那一个？用更AI的方式表述是：Skill太多，Agent如何在合适的时机，充分利用海量的Skill，去提升输出的质量？
+
+这里涉及到一个核心问题：Agent的输出质量高度依赖于输入。在模型固定的情况下，输入的上下文是唯一决定输出质量的因素。而Skill，本质上就是一个上下文注入的字典，Key是Description，Value是Content。大量冲突、重复的Key对匹配造成了困难，Value没有验证、没有价值排序，对选择造成了困难。
+
+人们使用这个字典的方式是在字典上撕下来几页他们自己认可的，做成一个本地的小字典，然后交给Agent在需要的时候查阅。研究发现，本地可用字典的页面并不是越多越好，因为Agent查字典的能力还不够成熟：
+
+\begin{itemize}
+    \item Skill数量 < 20：选择准确率 > 90\%
+    \item Skill数量 > 30：准确率开始陡降
+    \item Skill数量 = 200：准确率跌至约20\%
+\end{itemize}
+
+且本地字典依赖人类自身的维护：需要手动同步上游字典；人类在使用字典的某一页之前并没有办法确认这一页是否有用；且大多数人并不会编撰本地字典，不知道如何选择，也不知道如何使用。
+
+但云端的字典理论上可以解决一切字典中已经存在的问题。因为Skill就是Agent的答案之书，极大地决定了Agent的能力边界和输出质量。如何利用好已有的Skill，是决定Agent效用的最关键问题。
 
 \section{国内外研究现状和相关工作}
 \label{sec:related_work}
-对国内外研究现状和相关领域中已有的研究成果的简要评述。
+
+\subsection{Agent与Skill生态的发展现状}
+
+当前Agent框架、平台和社区正在快速发展，Skill的组织形式也日趋多样化。Skill的典型形式包括工具调用封装、任务编排模板、工作流定义和领域能力包等。围绕Skill的分发，已经出现了多个技能市场和社区平台。
+
+ClawHub类似早期的Yahoo，依赖人工编撰和列表展示，以下载量、GitHub Star数为主要排序指标。SkillHub与其类似，主要提供基于关键词的检索和简单的热度排序。EvoMap提出了一个有别于Skill的新概念，试图通过类似共享的方式传播Agent经验，但本质上仍在解决同一问题，只是将简单问题复杂化了。
+
+这些平台的共同问题在于：缺乏系统化的价值评估机制，难以在大规模Skill集合中高效识别高质量内容，用户发现成本高，Agent利用效率低。
+
+\subsection{信息检索与排序相关研究}
+
+传统信息检索系统通过相关性评分、TF-IDF、BM25等方法处理文档排序问题。推荐系统则发展出协同过滤、内容推荐、混合推荐等多特征综合评分方法。搜索引擎领域的PageRank算法\cite{page1999pagerank}通过链接分析评估网页价值，其核心思想是：一个网页被越多高质量网页链接，则该网页越重要。这一递归定义的价值传递机制为本文的Skill价值评估提供了重要启发。
+
+然而，Skill价值发现问题与传统网页排序存在本质差异。在网页排序场景中，排序结果的消费者是人类，人类的注意力呈指数衰减，通常只关注前几条结果，因此排序目标是最大化Top-1或Top-K的准确率。而在Skill排序场景中，排序结果的消费者是Agent，Agent具备在上下文窗口范围内均匀处理所有输入的能力，其目标不是找到单个最优Skill，而是在有限的上下文预算内，选取一组能够最大化输出质量的Skill集合。这一差异决定了Skill排序的优化目标应从"单点准确率"转向"区域覆盖质量"。
+
+此外，PageRank依赖网页间显式的超链接关系构建有向图，而大规模Skill生态中不存在此类显式关系。本文提出以Content语义相似度替代超链接，构建隐式的Skill亲缘图，在保留PageRank图结构思想的同时，适应了Skill生态的实际特点。
+
+\subsection{本文工作的定位}
+
+本文充分利用Agent与Skill的特点，针对Skill价值发现问题提出系统化解决方案。核心思路包括：
+
+\textbf{将本地Skill转移至云端}，解决人类手动维护Skill列表以及Agent能力受限于用户自身认知上限的问题。本质上这是一个"发现"问题，人类的发现效率远低于Agent，因为人类受限于信息带宽和表达能力，而Agent天然没有这个瓶颈。
+
+\textbf{通过中心化系统路由}，解决Agent意图判断匹配不准确的问题。Agent可以查询完整的上下文描述，精确表达问题、需求和期望的输出效果，而不必局限于关键词匹配。Skill被拆分成description作为触发器，content作为信息载体，由系统而非Agent自身来完成匹配。
+
+\textbf{构建Skill客观价值评价体系SkillRank}，解决Skill利用时的输出质量问题。排序的必要性在于：人只会查看列表的前几条结果，而Agent虽然理论上可以处理更多条目，但受限于上下文窗口，过多的Skill注入同样会稀释有效信息、降低输出质量。
+
+进一步地，本文对Skill的结构特性进行了形式化分析。每个Skill可表示为二元组$\langle Description, Content \rangle$，其中Description决定Skill在需求空间中的"坐标定位"，Content决定Skill被使用后对Agent输出质量的实际贡献。这一区分揭示了现有排序方案的根本局限：基于Description相似度的匹配仅能解决"找到哪些Skill"的问题，而无法回答"哪个Skill更好"的问题。在大规模Skill生态中，Description相近的Skill可能多达数百个，真正区分其价值的是Content的质量。
+
+为此，本文借鉴PageRank的图结构思想，提出基于Content亲缘关系的价值评估机制：若某Skill的Content被大量其他Skill的Content所模仿或引用，则该Skill代表了一种被广泛认可的解法模式，具有更高的生态价值。这一机制将Skill价值评估从孤立的单点评分转化为基于生态结构的整体分析。
+
+三者合一形成Taste云端Skill生产级可用系统，目标成为每一个Agent的默认能力引擎。
+
+\section{研究内容与目标}
+\label{sec:research_content}
+
+本文的研究内容主要包括以下几个方面：
+
+\begin{enumerate}
+    \item 分析Agent Skill生态中的价值发现问题，明确大规模Skill场景下的核心挑战；
+    \item 设计面向Skill价值评估的多维特征体系，构建综合评分与排序机制；
+    \item 实现SkillRank云端系统，完成Skill数据接入、处理、评估与查询服务的完整流程；
+    \item 通过功能验证和案例分析，说明系统方案的可行性与有效性。
+\end{enumerate}
+
+本文的研究目标是：设计并实现一个面向大规模Agent Skill的价值发现系统，提升高质量Skill的识别与复用效率，为Agent Skill生态提供系统化的组织与发现支撑。
+
+\section{本文的主要工作与创新点}
+\label{sec:contributions}
+
+本文的主要工作与创新点包括：
+
+\begin{enumerate}
+    \item 设计并实现了一个面向大规模Agent Skill价值发现的云端系统SkillRank，形成了较完整的系统架构与处理流程。
+    \item 提出了基于Content亲缘关系的Skill价值评估机制，将Skill的二元结构（Description-Content）形式化建模，通过Content语义相似度构建隐式亲缘图，借鉴PageRank思想实现价值传递与排序。
+    \item 构建了面向Skill价值评估的多维特征体系，从基础信息、活跃程度、生态反馈、内容质量、可复用性以及内容亲缘等角度对Skill进行综合分析。
+    \item 完成了原型系统开发，并通过功能验证和案例分析说明了系统方案的可行性。
+\end{enumerate}
+
 \section{本文的论文结构与章节安排}
 
 \label{sec:arrangement}
 
-本文共分为六章，各章节内容安排如下：
+本文共分为五章，各章节内容安排如下：
 
-第一章绪论。简单说明了本文章的选题背景与意义。
+第一章为绪论，介绍研究背景、相关工作、研究目标、主要工作与论文结构。
 
-第二章为本科生毕业论文写作与印制规范。本章节就学校的规范，逐点进行描述，并给出来了相关例子说明本模板在格式上的正确性。
+第二章为相关技术与需求分析，阐述SkillRank系统所依赖的关键技术，并对系统需求进行分析。
 
-第三章为本模板的使用说明。
+第三章为系统总体设计，给出系统架构、模块划分、数据流设计、数据库设计和接口设计。
 
-第四章为可用的\LaTeX 的代码段方便大家进行编辑。
+第四章为系统实现，说明系统核心模块的实现过程，包括数据接入、特征构建、价值评估与前后端功能实现。
 
-第五、六章是本文的最后两章，作为空白章节例子。
+第五章为实验与总结，对系统功能和效果进行验证，并总结全文工作与未来改进方向。
 
