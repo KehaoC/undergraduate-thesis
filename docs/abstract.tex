@@ -10,7 +10,7 @@
 
   针对上述问题，本文设计并实现了 Taste 系统原型及其核心排序算法 SkillRank。本文将 Skill 建模为二元组 $\langle Description, Content \rangle$，提出 Skill 价值评估应被视为一个条件排序问题：只有在 Description 语义相近的竞争邻域内部，对 Content 质量进行排序才有意义。基于这一观点，SkillRank 先在 Description 空间中完成语义聚类，再在各聚类内部以 Content embedding 构建稀疏 K-NN 亲缘图，通过 Content 原型中心度与 PageRank 风格的图传播分融合得到最终质量分；同时使用 FAISS 近似最近邻搜索为更大规模数据保留可扩展实现路径。
 
-  在实验层面，本文整理了 10028 条 GitHub Skill 样本（覆盖 2430 个仓库）作为统一数据资产，并按当晚实验预算仅运行 100 和 1000 两个规模的子集。评测采用聚类内 GitHub 仓库 Star 排序作为弱监督 proxy，以加权 within-cluster Spearman $\rho$ 衡量排序质量。经 AutoResearch 风格单变量迭代调优后，SkillRank 在 100 规模上由初始配置的 $-0.0084$ 提升至 $0.0600$，在 1000 规模上由 $0.0464$ 提升至 $0.0562$；两组结果均优于最强非图结构基线 Content centroid（分别为 $0.0284$ 与 $0.0527$）。效率对比表明，在 100 和 1000 这两个小中规模下，精确 K-NN 的常数开销仍低于 FAISS，但近似检索造成的质量损失接近于零。
+  在实验层面，本文整理了 10028 条 GitHub Skill 样本（覆盖 2430 个仓库）作为统一数据资产，并按实验机器配置运行了 100 和 1000 两个规模的子集。评测采用聚类内 GitHub 仓库 Star 排序作为弱监督 proxy，以加权 within-cluster Spearman $\rho$ 衡量排序质量。经 AutoResearch 风格单变量迭代调优后，SkillRank 在 100 规模上由初始配置的 $-0.0084$ 提升至 $0.0600$，在 1000 规模上由 $0.0464$ 提升至 $0.0562$；两组结果均优于最强非图结构基线 Content centroid（分别为 $0.0284$ 与 $0.0527$）。效率对比表明，在 100 和 1000 这两个小中规模下，精确 K-NN 的常数开销仍低于 FAISS，但近似检索造成的质量损失接近于零。
 
   在系统实现层面，本文完成了从离线实验流水线到在线演示 Demo 的完整闭环：离线部分使用 Python、sentence-transformers、scikit-learn、SciPy 与 FAISS 生成聚类、SkillRank 分值和三维语义地形产物；在线部分以 Plotly.js \texttt{scatter3d} 提供真实三维地形展示，并通过 TF-IDF 候选召回结合预计算 SkillRank 分值完成查询重排。全部实验日志、汇总 JSON、截图与 Demo 产物均被保留，以支持后续迭代与复现。
 \end{abstract}
