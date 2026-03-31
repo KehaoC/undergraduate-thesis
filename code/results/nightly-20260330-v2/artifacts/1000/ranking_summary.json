@@ -1,0 +1,664 @@
+{
+  "dataset_stats": {
+    "skill_count": 1000,
+    "repo_count": 385,
+    "star_min": 1,
+    "star_max": 56336,
+    "star_median": 10.0,
+    "star_mean": 569.92,
+    "description_mean_chars": 328.3,
+    "content_mean_chars": 25193.55
+  },
+  "cluster_count": 20,
+  "cluster_labels": {
+    "0": "docs / documentation / documents",
+    "1": "requirements / sprint / use",
+    "2": "api / use / integration",
+    "3": "review / testing / quality",
+    "4": "skill / skills / existing",
+    "5": "monorepo / packages / performance",
+    "6": "optimization / energy / user",
+    "7": "work / tasks / manage",
+    "8": "ui / components / theme",
+    "9": "aws / cloudformation / aws cloudformation",
+    "10": "data / database / migration",
+    "11": "generate / image / design",
+    "12": "browser / web / setup",
+    "13": "agent / agents / multi",
+    "14": "github / docker / deployment",
+    "15": "design / plan / review",
+    "16": "code / patterns / development",
+    "17": "ai / agents / agent",
+    "18": "python / pytest / django",
+    "19": "content / seo / pages"
+  },
+  "ranking_comparison": {
+    "random": 0.0061,
+    "content_length": -0.0243,
+    "description_centroid": 0.0331,
+    "content_centroid": 0.0527,
+    "skillrank_initial": 0.0464,
+    "skillrank_tuned": 0.0562
+  },
+  "initial_metrics": {
+    "rho": 0.04638208105248699,
+    "graph_build_seconds": 0.0176,
+    "pagerank_seconds": 0.0031,
+    "iterations": 20.45,
+    "edge_count": 12000,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 10,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 8,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 5,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 6,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 7,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 8,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 9,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 10,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 11,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 12,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 13,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 14,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 15,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 16,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 17,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 18,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 19,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 41,
+        "spearman_rho": -0.14093752734042733,
+        "p_value": 0.37943874112206394,
+        "mean_star": 474.92681884765625
+      },
+      {
+        "cluster_id": 1,
+        "size": 56,
+        "spearman_rho": 0.01090252829047662,
+        "p_value": 0.9364367009754835,
+        "mean_star": 100.08928680419922
+      },
+      {
+        "cluster_id": 2,
+        "size": 93,
+        "spearman_rho": 0.18416665922181996,
+        "p_value": 0.07720017762704384,
+        "mean_star": 583.5376586914062
+      },
+      {
+        "cluster_id": 3,
+        "size": 73,
+        "spearman_rho": -0.04181178905112878,
+        "p_value": 0.7254174190287099,
+        "mean_star": 443.34246826171875
+      },
+      {
+        "cluster_id": 4,
+        "size": 66,
+        "spearman_rho": 0.26692688195973935,
+        "p_value": 0.030267821332541675,
+        "mean_star": 159.65151977539062
+      },
+      {
+        "cluster_id": 5,
+        "size": 52,
+        "spearman_rho": -0.11574441254603535,
+        "p_value": 0.41386732179607677,
+        "mean_star": 1129.59619140625
+      },
+      {
+        "cluster_id": 6,
+        "size": 50,
+        "spearman_rho": 0.20504368725702424,
+        "p_value": 0.1531669511386713,
+        "mean_star": 90.36000061035156
+      },
+      {
+        "cluster_id": 7,
+        "size": 34,
+        "spearman_rho": 0.021518927652864804,
+        "p_value": 0.903852374699324,
+        "mean_star": 149.58824157714844
+      },
+      {
+        "cluster_id": 8,
+        "size": 34,
+        "spearman_rho": 0.0956491780083587,
+        "p_value": 0.5905074774154425,
+        "mean_star": 497.70587158203125
+      },
+      {
+        "cluster_id": 9,
+        "size": 29,
+        "spearman_rho": -0.14404827867259104,
+        "p_value": 0.45596769641401474,
+        "mean_star": 55.75862121582031
+      },
+      {
+        "cluster_id": 10,
+        "size": 83,
+        "spearman_rho": 0.01757344044979539,
+        "p_value": 0.8747044173365446,
+        "mean_star": 310.3252868652344
+      },
+      {
+        "cluster_id": 11,
+        "size": 34,
+        "spearman_rho": 0.09034045443214035,
+        "p_value": 0.6113773211194805,
+        "mean_star": 179.7941131591797
+      },
+      {
+        "cluster_id": 12,
+        "size": 21,
+        "spearman_rho": 0.1666269728937963,
+        "p_value": 0.4703590256669137,
+        "mean_star": 370.8571472167969
+      },
+      {
+        "cluster_id": 13,
+        "size": 46,
+        "spearman_rho": -0.2804493319158166,
+        "p_value": 0.0590482692882185,
+        "mean_star": 378.0
+      },
+      {
+        "cluster_id": 14,
+        "size": 44,
+        "spearman_rho": -0.044814870365353435,
+        "p_value": 0.7726919669846196,
+        "mean_star": 111.13636016845703
+      },
+      {
+        "cluster_id": 15,
+        "size": 43,
+        "spearman_rho": -0.008588391650307642,
+        "p_value": 0.9564099093665543,
+        "mean_star": 5538.0234375
+      },
+      {
+        "cluster_id": 16,
+        "size": 83,
+        "spearman_rho": 0.23849848922204728,
+        "p_value": 0.02990777839044638,
+        "mean_star": 72.91566467285156
+      },
+      {
+        "cluster_id": 17,
+        "size": 50,
+        "spearman_rho": 0.003853104118487224,
+        "p_value": 0.978813451698394,
+        "mean_star": 320.1600036621094
+      },
+      {
+        "cluster_id": 18,
+        "size": 21,
+        "spearman_rho": -0.036625262887195136,
+        "p_value": 0.8747617240092631,
+        "mean_star": 78.38095092773438
+      },
+      {
+        "cluster_id": 19,
+        "size": 47,
+        "spearman_rho": 0.08109281759897842,
+        "p_value": 0.5879095421139613,
+        "mean_star": 787.5531616210938
+      }
+    ],
+    "pagerank_weight": 0.3
+  },
+  "tuned_metrics": {
+    "rho": 0.05620285985974708,
+    "graph_build_seconds": 0.016,
+    "pagerank_seconds": 0.0024,
+    "iterations": 17.35,
+    "edge_count": 15000,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 10,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 8,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 5,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 6,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 7,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 8,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 9,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 10,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 11,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 12,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 13,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 14,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 15,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 16,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 17,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 18,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 19,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 41,
+        "spearman_rho": -0.12955582166246224,
+        "p_value": 0.4194830876046144,
+        "mean_star": 474.92681884765625
+      },
+      {
+        "cluster_id": 1,
+        "size": 56,
+        "spearman_rho": 0.02412074419949254,
+        "p_value": 0.8599344594196298,
+        "mean_star": 100.08928680419922
+      },
+      {
+        "cluster_id": 2,
+        "size": 93,
+        "spearman_rho": 0.1730060229269236,
+        "p_value": 0.09724170733263125,
+        "mean_star": 583.5376586914062
+      },
+      {
+        "cluster_id": 3,
+        "size": 73,
+        "spearman_rho": 0.007872624902506481,
+        "p_value": 0.9472951988182379,
+        "mean_star": 443.34246826171875
+      },
+      {
+        "cluster_id": 4,
+        "size": 66,
+        "spearman_rho": 0.2675741433262212,
+        "p_value": 0.029854037865009675,
+        "mean_star": 159.65151977539062
+      },
+      {
+        "cluster_id": 5,
+        "size": 52,
+        "spearman_rho": -0.1085583123538908,
+        "p_value": 0.44363850769517854,
+        "mean_star": 1129.59619140625
+      },
+      {
+        "cluster_id": 6,
+        "size": 50,
+        "spearman_rho": 0.22706579590291653,
+        "p_value": 0.11278943360631942,
+        "mean_star": 90.36000061035156
+      },
+      {
+        "cluster_id": 7,
+        "size": 34,
+        "spearman_rho": 0.00015367139517281496,
+        "p_value": 0.9993117984292216,
+        "mean_star": 149.58824157714844
+      },
+      {
+        "cluster_id": 8,
+        "size": 34,
+        "spearman_rho": 0.1410080095897788,
+        "p_value": 0.4263558586351252,
+        "mean_star": 497.70587158203125
+      },
+      {
+        "cluster_id": 9,
+        "size": 29,
+        "spearman_rho": -0.11732539924806233,
+        "p_value": 0.5444323874722982,
+        "mean_star": 55.75862121582031
+      },
+      {
+        "cluster_id": 10,
+        "size": 83,
+        "spearman_rho": 0.0016580829299193006,
+        "p_value": 0.9881304919966257,
+        "mean_star": 310.3252868652344
+      },
+      {
+        "cluster_id": 11,
+        "size": 34,
+        "spearman_rho": 0.09502130699339115,
+        "p_value": 0.5929594406416262,
+        "mean_star": 179.7941131591797
+      },
+      {
+        "cluster_id": 12,
+        "size": 21,
+        "spearman_rho": 0.14155401523727812,
+        "p_value": 0.5405008216532198,
+        "mean_star": 370.8571472167969
+      },
+      {
+        "cluster_id": 13,
+        "size": 46,
+        "spearman_rho": -0.2804579806855569,
+        "p_value": 0.059040121706859426,
+        "mean_star": 378.0
+      },
+      {
+        "cluster_id": 14,
+        "size": 44,
+        "spearman_rho": -0.05189280315472431,
+        "p_value": 0.7379766616612587,
+        "mean_star": 111.13636016845703
+      },
+      {
+        "cluster_id": 15,
+        "size": 43,
+        "spearman_rho": 0.005625957577369353,
+        "p_value": 0.9714378283049766,
+        "mean_star": 5538.0234375
+      },
+      {
+        "cluster_id": 16,
+        "size": 83,
+        "spearman_rho": 0.26542312616708985,
+        "p_value": 0.015303486353174483,
+        "mean_star": 72.91566467285156
+      },
+      {
+        "cluster_id": 17,
+        "size": 50,
+        "spearman_rho": 0.04753683729144979,
+        "p_value": 0.7430479463030972,
+        "mean_star": 320.1600036621094
+      },
+      {
+        "cluster_id": 18,
+        "size": 21,
+        "spearman_rho": -0.01320258855259329,
+        "p_value": 0.9547050563137326,
+        "mean_star": 78.38095092773438
+      },
+      {
+        "cluster_id": 19,
+        "size": 47,
+        "spearman_rho": 0.06821619557062987,
+        "p_value": 0.6486741269693573,
+        "mean_star": 787.5531616210938
+      }
+    ],
+    "pagerank_weight": 0.1
+  },
+  "benchmarks": {
+    "faiss_seconds": 0.0189,
+    "exact_seconds": 0.0042,
+    "speedup": 0.22,
+    "faiss_rho": 0.05620285985974708,
+    "exact_rho": 0.055151914260676664,
+    "rho_loss": -0.0011,
+    "faiss_iterations": 17.35,
+    "exact_iterations": 17.35
+  },
+  "cluster_sensitivity": [
+    {
+      "n_clusters": 16,
+      "max_cluster_size": 152,
+      "min_cluster_size": 10,
+      "rho": 0.0684
+    },
+    {
+      "n_clusters": 20,
+      "max_cluster_size": 93,
+      "min_cluster_size": 21,
+      "rho": 0.0562
+    },
+    {
+      "n_clusters": 24,
+      "max_cluster_size": 91,
+      "min_cluster_size": 3,
+      "rho": 0.0761
+    }
+  ],
+  "case_study": {
+    "cluster_id": 2,
+    "cluster_label": "api / use / integration",
+    "cluster_size": 93,
+    "rows": [
+      {
+        "skill_id": "5f3aa26aa2746370",
+        "name": "openapi-spec-generation",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.6769,
+        "github_stars": 2,
+        "star_rank": 68,
+        "github_repo": "Microck/opendots-microck"
+      },
+      {
+        "skill_id": "5e4122a108a046a8",
+        "name": "integration-builder",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.6547,
+        "github_stars": 1142,
+        "star_rank": 4,
+        "github_repo": "open-mercato/open-mercato"
+      },
+      {
+        "skill_id": "ef6f0e2040c3c1ac",
+        "name": "frontend-ultimate",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.6387,
+        "github_stars": 161,
+        "star_rank": 24,
+        "github_repo": "majiayu000/claude-skill-registry"
+      },
+      {
+        "skill_id": "2c9127a27c8fd5bf",
+        "name": "moai-lang-typescript",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.6117,
+        "github_stars": 2,
+        "star_rank": 79,
+        "github_repo": "majiayu000/claude-skill-registry-data"
+      },
+      {
+        "skill_id": "4f128054bb53f416",
+        "name": "hono-routing",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.601,
+        "github_stars": 11,
+        "star_rank": 39,
+        "github_repo": "jackspace/ClaudeSkillz"
+      },
+      {
+        "skill_id": "5b2cd4b882614cbb",
+        "name": "stimulus",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.2133,
+        "github_stars": 4,
+        "star_rank": 49,
+        "github_repo": "ineersa/re-search"
+      },
+      {
+        "skill_id": "a393e0799677676f",
+        "name": "android-maps3d-sdk",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.1767,
+        "github_stars": 9,
+        "star_rank": 44,
+        "github_repo": "googlemaps-samples/android-maps3d-samples"
+      },
+      {
+        "skill_id": "603b8f585fcbce96",
+        "name": "website-links",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.1732,
+        "github_stars": 33,
+        "star_rank": 34,
+        "github_repo": "moasq/nanowave"
+      }
+    ]
+  }
+}

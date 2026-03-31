@@ -1,8 +1,8 @@
 % !TeX root = ./main.tex
 
 \sysusetup{
-  title                = {SkillRank：面向大规模 Agent Skill 价值发现的云端系统设计与实现},
-  title*               = {SkillRank: Design and Implementation of a Cloud-Based System for Value Discovery of Agent Skills at Scale},
+  title                = {SkillRank：面向大规模 Agent Skill 价值发现的系统设计与实现},
+  title*               = {SkillRank: Design and Implementation of a System for Value Discovery of Agent Skills at Scale},
   author               = {蔡可豪},
   author*              = {Cai Kyrie},
   speciality           = {计算机科学与技术},
@@ -54,6 +54,11 @@
 \usepackage[ruled,linesnumbered]{algorithm2e}
 %\renewcommand{\thealgocf}{\arabic{chapter}-\arabic{algocf}}% 将算法标题由x.x改为x-x，慎用
 
+% 绘图
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
 % 代码块
 \usepackage{listings}
 
@@ -95,3 +100,5 @@
 
 % hyperref 宏包在最后调用
 \usepackage{hyperref}
+
+\setlength{\headheight}{13pt}

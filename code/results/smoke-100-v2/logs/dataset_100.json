@@ -1,0 +1,20 @@
+{
+  "dataset_stats": {
+    "skill_count": 100,
+    "repo_count": 54,
+    "star_min": 1,
+    "star_max": 3588,
+    "star_median": 10.0,
+    "star_mean": 207.01,
+    "description_mean_chars": 340.81,
+    "content_mean_chars": 25304.52
+  },
+  "cluster_count": 5,
+  "cluster_labels": {
+    "0": "security / azure / data",
+    "1": "pages / docs / github",
+    "2": "user / production / scheduling",
+    "3": "test / quality / qa",
+    "4": "diagrams / use / template"
+  }
+}

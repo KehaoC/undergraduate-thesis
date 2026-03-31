@@ -1,0 +1,289 @@
+{
+  "dataset_stats": {
+    "skill_count": 100,
+    "repo_count": 54,
+    "star_min": 1,
+    "star_max": 3588,
+    "star_median": 10.0,
+    "star_mean": 207.01,
+    "description_mean_chars": 340.81,
+    "content_mean_chars": 25304.52
+  },
+  "cluster_count": 5,
+  "cluster_labels": {
+    "0": "security / azure / data",
+    "1": "pages / docs / github",
+    "2": "user / production / scheduling",
+    "3": "test / quality / qa",
+    "4": "diagrams / use / template"
+  },
+  "ranking_comparison": {
+    "random": 0.0001,
+    "content_length": -0.1501,
+    "description_centroid": -0.0405,
+    "content_centroid": 0.0284,
+    "skillrank_initial": -0.0084,
+    "skillrank_tuned": -0.0055
+  },
+  "initial_metrics": {
+    "rho": -0.0083855719234261,
+    "graph_build_seconds": 0.001,
+    "pagerank_seconds": 0.0005,
+    "iterations": 12.6,
+    "edge_count": 1178,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 14,
+        "spearman_rho": 0.11982182871388838,
+        "p_value": 0.6832677817474008,
+        "mean_star": 347.78570556640625
+      },
+      {
+        "cluster_id": 1,
+        "size": 18,
+        "spearman_rho": 0.17668780329540265,
+        "p_value": 0.48308136938803553,
+        "mean_star": 439.8888854980469
+      },
+      {
+        "cluster_id": 2,
+        "size": 31,
+        "spearman_rho": -0.19811614430269725,
+        "p_value": 0.28535408492029035,
+        "mean_star": 167.4193572998047
+      },
+      {
+        "cluster_id": 3,
+        "size": 11,
+        "spearman_rho": 0.23857283174626326,
+        "p_value": 0.47989330450196405,
+        "mean_star": 17.18181800842285
+      },
+      {
+        "cluster_id": 4,
+        "size": 26,
+        "spearman_rho": -0.08381322805690679,
+        "p_value": 0.6839606088429113,
+        "mean_star": 97.5
+      }
+    ],
+    "pagerank_weight": 0.3
+  },
+  "tuned_metrics": {
+    "rho": -0.005538731323683059,
+    "graph_build_seconds": 0.001,
+    "pagerank_seconds": 0.0005,
+    "iterations": 12.8,
+    "edge_count": 1417,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 14,
+        "spearman_rho": 0.11982182871388838,
+        "p_value": 0.6832677817474008,
+        "mean_star": 347.78570556640625
+      },
+      {
+        "cluster_id": 1,
+        "size": 18,
+        "spearman_rho": 0.1882566475587921,
+        "p_value": 0.45440380588059875,
+        "mean_star": 439.8888854980469
+      },
+      {
+        "cluster_id": 2,
+        "size": 31,
+        "spearman_rho": -0.1950619385837451,
+        "p_value": 0.2929961656430475,
+        "mean_star": 167.4193572998047
+      },
+      {
+        "cluster_id": 3,
+        "size": 11,
+        "spearman_rho": 0.23857283174626326,
+        "p_value": 0.47989330450196405,
+        "mean_star": 17.18181800842285
+      },
+      {
+        "cluster_id": 4,
+        "size": 26,
+        "spearman_rho": -0.08451459398206919,
+        "p_value": 0.6814515706124804,
+        "mean_star": 97.5
+      }
+    ],
+    "pagerank_weight": 0.1
+  },
+  "benchmarks": {
+    "faiss_seconds": 0.0014,
+    "exact_seconds": 0.0007,
+    "speedup": 0.5,
+    "faiss_rho": -0.005538731323683059,
+    "exact_rho": -0.005538731323683059,
+    "rho_loss": 0.0,
+    "faiss_iterations": 12.8,
+    "exact_iterations": 13.0
+  },
+  "cluster_sensitivity": [
+    {
+      "n_clusters": 4,
+      "max_cluster_size": 43,
+      "min_cluster_size": 9,
+      "rho": -0.0257
+    },
+    {
+      "n_clusters": 5,
+      "max_cluster_size": 31,
+      "min_cluster_size": 11,
+      "rho": -0.0055
+    },
+    {
+      "n_clusters": 9,
+      "max_cluster_size": 21,
+      "min_cluster_size": 1,
+      "rho": 0.0486
+    }
+  ],
+  "case_study": {
+    "cluster_id": 2,
+    "cluster_label": "user / production / scheduling",
+    "cluster_size": 31,
+    "rows": [
+      {
+        "skill_id": "e5bd27d62e891632",
+        "name": "builder-skill",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.7447,
+        "github_stars": 161,
+        "star_rank": 8,
+        "github_repo": "majiayu000/claude-skill-registry"
+      },
+      {
+        "skill_id": "91b99d1b017b5c5a",
+        "name": "excoder-usage",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.7224,
+        "github_stars": 1,
+        "star_rank": 30,
+        "github_repo": "LJT-520/openClaw-backup"
+      },
+      {
+        "skill_id": "f6c82e722e4e4d77",
+        "name": "babysitter-codex",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.6552,
+        "github_stars": 5,
+        "star_rank": 21,
+        "github_repo": "yaniv-tg/babysitter-codex"
+      },
+      {
+        "skill_id": "6e4c6c53a11b152a",
+        "name": "gsd-help",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.6099,
+        "github_stars": 2,
+        "star_rank": 28,
+        "github_repo": "majiayu000/claude-skill-registry-data"
+      },
+      {
+        "skill_id": "441dbdedc91c0b53",
+        "name": "production-scheduling",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.6072,
+        "github_stars": 10,
+        "star_rank": 19,
+        "github_repo": "kishorkukreja/awesome-supply-chain"
+      },
+      {
+        "skill_id": "34674acc764a6537",
+        "name": "record-keeping-documentation",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.3343,
+        "github_stars": 3588,
+        "star_rank": 1,
+        "github_repo": "openclaw/skills"
+      },
+      {
+        "skill_id": "06df419bf34268c7",
+        "name": "test-engineer",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.3332,
+        "github_stars": 2,
+        "star_rank": 24,
+        "github_repo": "majiayu000/claude-skill-registry-data"
+      },
+      {
+        "skill_id": "f9e7daefb6dd77db",
+        "name": "observe",
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "skillrank_score": 0.3107,
+        "github_stars": 1,
+        "star_rank": 31,
+        "github_repo": "observeinc/observe-claude-code-skill-example"
+      }
+    ]
+  }
+}

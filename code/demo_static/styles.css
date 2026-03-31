@@ -1,0 +1,251 @@
+:root {
+  --bg: #f5f1e8;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --ink: #1f2933;
+  --muted: #66788a;
+  --accent: #c34a36;
+  --accent-2: #0d6e6e;
+  --line: rgba(31, 41, 51, 0.12);
+  --shadow: 0 20px 60px rgba(75, 70, 61, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(13, 110, 110, 0.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(195, 74, 54, 0.18), transparent 28%),
+    linear-gradient(180deg, #f9f5ef, var(--bg));
+}
+
+.shell {
+  width: min(1380px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 28px 0 40px;
+}
+
+.hero,
+.workspace {
+  display: grid;
+  gap: 24px;
+}
+
+.hero {
+  grid-template-columns: 1.4fr 0.8fr;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.label,
+.hint,
+.summary,
+.stat-label {
+  margin: 0;
+}
+
+.eyebrow,
+.label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  margin: 8px 0 0;
+}
+
+h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+  max-width: 12ch;
+}
+
+h2 {
+  font-size: 22px;
+}
+
+.summary {
+  max-width: 62ch;
+  margin-top: 16px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.stats,
+.terrain-card,
+.query-card,
+.result-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  border-radius: 28px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 20px;
+}
+
+.stat {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.workspace {
+  grid-template-columns: 1.5fr 0.85fr;
+  align-items: start;
+}
+
+.terrain-card,
+.query-card,
+.result-card {
+  padding: 20px 20px 18px;
+}
+
+.panel {
+  display: grid;
+  gap: 20px;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+}
+
+.card-head.compact {
+  align-items: center;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#terrain {
+  height: 720px;
+  margin-top: 14px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 130px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  padding: 16px 18px;
+  margin-top: 14px;
+  font: inherit;
+  line-height: 1.6;
+  background: var(--surface-strong);
+}
+
+.query-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+button {
+  margin-top: 16px;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--accent), #a4262c);
+}
+
+.result-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.result-item {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.result-rank {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--accent-2);
+  font-size: 13px;
+}
+
+.result-title {
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.result-meta,
+.result-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.empty {
+  padding: 22px 16px;
+  border-radius: 18px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+@media (max-width: 1120px) {
+  .hero,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  #terrain {
+    height: 520px;
+  }
+}

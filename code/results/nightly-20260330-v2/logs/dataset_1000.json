@@ -1,0 +1,35 @@
+{
+  "dataset_stats": {
+    "skill_count": 1000,
+    "repo_count": 385,
+    "star_min": 1,
+    "star_max": 56336,
+    "star_median": 10.0,
+    "star_mean": 569.92,
+    "description_mean_chars": 328.3,
+    "content_mean_chars": 25193.55
+  },
+  "cluster_count": 20,
+  "cluster_labels": {
+    "0": "docs / documentation / documents",
+    "1": "requirements / sprint / use",
+    "2": "api / use / integration",
+    "3": "review / testing / quality",
+    "4": "skill / skills / existing",
+    "5": "monorepo / packages / performance",
+    "6": "optimization / energy / user",
+    "7": "work / tasks / manage",
+    "8": "ui / components / theme",
+    "9": "aws / cloudformation / aws cloudformation",
+    "10": "data / database / migration",
+    "11": "generate / image / design",
+    "12": "browser / web / setup",
+    "13": "agent / agents / multi",
+    "14": "github / docker / deployment",
+    "15": "design / plan / review",
+    "16": "code / patterns / development",
+    "17": "ai / agents / agent",
+    "18": "python / pytest / django",
+    "19": "content / seo / pages"
+  }
+}

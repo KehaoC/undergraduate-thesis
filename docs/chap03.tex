@@ -5,249 +5,204 @@
 \chapter{Taste 系统总体设计}
 \label{cha:design}
 
-\section{系统架构概述}
+\section{原型系统目标}
 \label{sec:arch_overview}
 
-Taste 系统的设计核心目标是：将 Agent Skill 的发现、质量评估与路由能力从用户本地彻底迁移至云端，构建一个对用户完全透明、对 Agent 调用友好的 Skill 能力引擎。正如 Google 通过将网页索引迁移至服务器端彻底改变了信息检索的方式，Taste 通过将 Skill 索引与质量评估迁移至云端，使得 Agent 无需在本地维护任何 Skill 列表，也无需承担意图匹配的计算压力。
+本文实现的 Taste 原型系统围绕一个明确目标展开：将分散在 GitHub 仓库中的 Agent Skill 统一整理为可计算的数据资产，在离线阶段完成语义组织与质量评估，在在线阶段以三维语义地形图的方式向用户展示，并支持按任务描述返回最合适的 Skill 子集。与“先建一个完整平台，再等待数据与算法补齐”的做法不同，本文采用“\textbf{数据集构建 $\rightarrow$ 离线排序 $\rightarrow$ 在线 Demo}”的最小闭环方案，把论文中需要论证的关键问题直接落到可复现的代码路径上。
 
-系统整体采用前后端分离的分层云端架构，如图 \ref{fig:system_arch} 所示，从下至上分为四层：数据采集与存储层、算法计算层、服务接口层和前端交互层。各层之间通过标准化接口松散耦合，每一层可以独立扩展而不影响其他层的运行。
+这一设计有三个直接好处。第一，所有实验依赖都固定在版本化的 JSON 数据集与离线产物文件上，便于后续反复复现实验；第二，排序算法与交互前端完全解耦，算法每次重算后只需替换产物文件即可更新 Demo；第三，在线部分不承担昂贵的全量重计算，只负责读取预计算结果与执行轻量级查询路由，因此能够以很低的工程复杂度完成“算法价值 $\rightarrow$ 用户体验”的转化。
+
+\section{系统总体架构}
+
+Taste 原型采用四段式结构，如图 \ref{fig:system_arch} 所示：底层是数据资产层，负责保存清洗后的 Skill JSON 数据集；其上是离线计算层，负责 embedding、聚类、SkillRank 与可视化坐标计算；第三层是产物层，负责保存供论文与 Demo 直接消费的 JSON / NPY 结果文件；最上层是在线展示层，负责三维语义地形图渲染与查询交互。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
   layer/.style={rectangle, draw, rounded corners, minimum width=10cm, minimum height=1.2cm, font=\small},
-  box/.style={rectangle, draw, fill=white, rounded corners, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+  box/.style={rectangle, draw, fill=white, rounded corners, minimum width=2cm, minimum height=0.8cm, font=\footnotesize, align=center},
   arrow/.style={->, thick, >=stealth}
 ]
-  % 层 4：前端
   \node[layer, fill=orange!15] (L4) at (0,5.5) {};
-  \node[box, fill=orange!30] at (-3.5,5.5) {三维地形图};
-  \node[box, fill=orange!30] at (-1.0,5.5) {Skill 详情页};
-  \node[box, fill=orange!30] at (1.5,5.5) {查询推荐界面};
-  \node[box, fill=orange!30] at (4.0,5.5) {行为信号采集};
-  \node[font=\footnotesize\bfseries] at (-5.8,5.5) {前端交互层};
+  \node[box, fill=orange!30] at (-3.6,5.5) {Plotly.js\\三维地形图};
+  \node[box, fill=orange!30] at (-1.0,5.5) {查询输入\\与结果列表};
+  \node[box, fill=orange!30] at (1.6,5.5) {截图产物\\论文插图};
+  \node[box, fill=orange!30] at (4.2,5.5) {本地浏览器\\交互演示};
+  \node[font=\footnotesize\bfseries] at (-5.8,5.5) {在线展示层};
 
-  % 层 3：服务接口
   \node[layer, fill=green!15] (L3) at (0,3.8) {};
-  \node[box, fill=green!30] at (-3.5,3.8) {推荐查询接口};
-  \node[box, fill=green!30] at (-1.0,3.8) {Skill 检索接口};
-  \node[box, fill=green!30] at (1.5,3.8) {地形数据接口};
-  \node[box, fill=green!30] at (4.0,3.8) {信号上报接口};
+  \node[box, fill=green!30] at (-3.6,3.8) {\texttt{/api/terrain}};
+  \node[box, fill=green!30] at (-1.0,3.8) {\texttt{/api/recommend}};
+  \node[box, fill=green!30] at (1.6,3.8) {\texttt{/api/skills}};
+  \node[box, fill=green!30] at (4.2,3.8) {静态 HTML/CSS/JS};
   \node[font=\footnotesize\bfseries] at (-5.8,3.8) {服务接口层};
 
-  % 层 2：算法计算
   \node[layer, fill=blue!15] (L2) at (0,2.1) {};
-  \node[box, fill=blue!30] at (-3.5,2.1) {Content Embedding};
-  \node[box, fill=blue!30] at (-1.0,2.1) {FAISS 图构建};
-  \node[box, fill=blue!30] at (1.5,2.1) {PageRank 迭代};
-  \node[box, fill=blue!30] at (4.0,2.1) {UMAP 降维 / HDBSCAN};
-  \node[font=\footnotesize\bfseries] at (-5.8,2.1) {算法计算层};
+  \node[box, fill=blue!30] at (-3.6,2.1) {Description\\Embedding};
+  \node[box, fill=blue!30] at (-1.0,2.1) {MiniBatch\\KMeans 聚类};
+  \node[box, fill=blue!30] at (1.6,2.1) {Content 先验 +\\SkillRank 图传播};
+  \node[box, fill=blue!30] at (4.2,2.1) {PCA 降维\\导出地形坐标};
+  \node[font=\footnotesize\bfseries] at (-5.8,2.1) {离线计算层};
 
-  % 层 1：数据存储
   \node[layer, fill=gray!15] (L1) at (0,0.4) {};
-  \node[box, fill=gray!30] at (-3.5,0.4) {ClawHub 爬虫};
-  \node[box, fill=gray!30] at (-1.0,0.4) {PostgreSQL};
-  \node[box, fill=gray!30] at (1.5,0.4) {Redis 缓存};
-  \node[box, fill=gray!30] at (4.0,0.4) {pgvector 向量库};
-  \node[font=\footnotesize\bfseries] at (-5.8,0.4) {数据存储层};
+  \node[box, fill=gray!30] at (-3.6,0.4) {GitHub 代码搜索\\发现 \texttt{SKILL.md}};
+  \node[box, fill=gray!30] at (-1.0,0.4) {\texttt{skills\_full.json}};
+  \node[box, fill=gray!30] at (1.6,0.4) {\texttt{skills\_100.json}\\\texttt{skills\_1000.json}};
+  \node[box, fill=gray!30] at (4.2,0.4) {实验日志与\\截图文件};
+  \node[font=\footnotesize\bfseries] at (-5.8,0.4) {数据资产层};
 
-  % 层间箭头
   \draw[arrow] (L1) -- (L2);
   \draw[arrow] (L2) -- (L3);
   \draw[arrow] (L3) -- (L4);
-
 \end{tikzpicture}
-\caption{Taste 系统四层架构图。数据从底层采集存储，经算法计算层的 SkillRank 处理，通过服务接口层对外暴露，最终由前端交互层呈现给用户。}
+\caption{Taste 原型系统四段式架构。底层保存 Skill 数据集与实验日志；离线层负责聚类、排序与坐标生成；服务层读取产物对外提供查询接口；展示层以三维语义地形图形式呈现结果。}
 \label{fig:system_arch}
 \end{figure}
 
-系统的主数据流向如下：数据采集层持续从 ClawHub 平台爬取 Skill 原始数据，写入 PostgreSQL；算法计算层作为后台批处理任务（由 Celery 调度），定期对全量 Skill 执行 Content embedding、稀疏 K-NN 图构建、PageRank 迭代、HDBSCAN 语义聚类和 UMAP 降维，将计算结果回写数据库；服务接口层基于 FastAPI 实现，在用户提交查询时实时运行 Description embedding 和 FAISS 检索，返回推荐结果；前端层以三维地形图为核心可视化组件，提供直观的交互式 Skill 探索界面。Redis 作为缓存层贯穿服务接口层，将高频查询的推荐结果和 Description embedding 向量缓存至内存，将 API 查询的 P99 延迟控制在 500ms 以内。
+与传统“数据库驱动的 Web 平台”相比，这一结构刻意将系统状态收敛到文件产物：一方面，论文实验的可复现性天然依赖于固定输入与固定输出；另一方面，本研究的重点并不在高并发事务处理，而在 Skill 语义建模与排序机制本身。将所有中间状态显式落盘，使每次离线重算都可追溯到具体输入数据、参数配置与日志文件，这也是本文后续实验部分能够完整保留迭代轨迹的重要前提。
 
-\section{数据接入与管理模块设计}
+\section{数据资产与产物组织}
 \label{sec:data_module}
 
-数据接入模块负责从外部平台持续获取 Skill 数据并维护其新鲜度。系统目前接入 ClawHub 作为主要数据源，ClawHub 是目前规模最大的 Agent Skill 社区平台，收录了来自全球开发者贡献的 2 万余个 Skill，覆盖面广且数据质量相对可控。
-
-数据接入流程分为初始全量拉取和增量同步两个模式。初始全量拉取在系统首次部署时运行，以异步并发的方式遍历 ClawHub 的全部 Skill 列表页，对每个 Skill 访问其详情页以提取完整的 Description 和 Content 字段，同时对含 GitHub 仓库链接的 Skill 调用 GitHub REST API 异步获取 Star 数和 Fork 数。增量同步每 24 小时运行一次，仅抓取自上次同步以来新增或更新的 Skill，维护数据的时效性。
-
-数据清洗分三个阶段执行：格式规范化（去除冗余空白、HTML 残余、控制字符）、去重过滤（MD5 精确去重 + embedding 相似度近重复检测，阈值 0.98）、有效性过滤（剔除字段为空或内容无意义的条目）。原始爬取数据的有效率约为 64.9\%（2103/3241）。
-
-系统数据库核心表结构如表 \ref{tab:db_schema} 所示。
+Taste 原型不使用关系型数据库，而是把研究过程中的核心状态显式组织为若干类文件产物。表 \ref{tab:artifact_schema} 给出了本文最终保留的关键文件。
 
 \begin{table}[htbp]
 \centering
-\caption{Taste 数据库核心表结构}
-\label{tab:db_schema}
-\begin{tabular}{llp{7cm}}
+\caption{Taste 原型的核心数据产物}
+\label{tab:artifact_schema}
+\begin{tabular}{p{3.5cm}p{1.7cm}p{6.0cm}}
 \toprule
-表名 & 关键字段 & 用途说明 \\
+文件/目录 & 类型 & 用途说明 \\
 \midrule
-\texttt{skills} & id, name, description, content, source\_url, github\_stars, created\_at & 存储 Skill 的全部原始元数据，是系统其他所有表的数据来源 \\
-\texttt{skill\_embeddings} & skill\_id, desc\_vec(384), content\_vec(384) & 使用 pgvector 扩展存储两类 embedding 向量，对两列各建 HNSW 索引 \\
-\texttt{skill\_scores} & skill\_id, skillrank\_score, cluster\_id, umap\_x, umap\_y, computed\_at & 存储每轮 SkillRank 计算结果及三维坐标，保留历史版本 \\
-\texttt{behavior\_signals} & session\_id, context\_text, returned\_skill\_ids, clicked\_skill\_id, dwell\_ms, created\_at & 记录每次用户交互行为，用于行为分的周期聚合计算 \\
+\path{code/data/skills_full.json} & 原始数据集 & 保存 10028 条清洗后的 Skill 样本，是后续全部实验的统一输入 \\
+\path{code/data/skills_100.json} & 子集数据 & 100 条小规模样本，用于烟雾测试、快速调参与小规模结果验证 \\
+\path{code/data/skills_1000.json} & 子集数据 & 1000 条主实验样本，是今晚排序实验与 Demo 的核心输入 \\
+\path{code/results/*/summary.json} & 结果摘要 & 保存每轮实验的聚类数、排序指标、调参轨迹与 benchmark 结果 \\
+\path{code/results/*/artifacts/*/terrain.json} & 可视化产物 & 保存每个 Skill 的二维坐标、聚类编号、SkillRank 分值与元信息 \\
+\path{code/results/*/logs/*.json} & 实验日志 & 保存数据口径、AutoResearch 轨迹与论文回填所需的过程记录 \\
+\path{image/chap04/*.png} & 截图文件 & 保存三维 Demo 的首页与查询交互截图，供论文插图直接引用 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{SkillRank 计算模块设计}
+这种文件组织方式使得 Taste 原型同时服务于两类目标：对研究而言，固定的 JSON/NPY 文件让离线实验具备完全可复现性；对系统演示而言，\texttt{terrain.json} 和预计算分数文件能够被在线 Demo 直接读取，无需重新跑离线算法。这种“研究产物即系统输入”的组织方式，使论文写作、实验复现与 Demo 展示共享同一套结果资产。
+
+\section{SkillRank 计算链路设计}
 \label{sec:skillrank_module}
 
-SkillRank 计算模块是 Taste 系统的算法核心，完整执行流程如图 \ref{fig:skillrank_pipeline} 所示，分为四个依次进行的阶段：Content Embedding、稀疏 K-NN 图构建、PageRank 迭代收敛、语义聚类与 UMAP 降维。
+本文最终采用的 SkillRank 计算链路如图 \ref{fig:skillrank_pipeline} 所示。与最初“全局图上直接 PageRank”的直觉实现不同，最终方案明确遵循第二章提出的\textbf{条件排序}定义：先用 Description embedding 把 Skill 划分为若干语义竞争邻域，再在每个邻域内部计算内容质量分，最后把这些分值与二维坐标一同导出为可视化产物。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-  stage/.style={rectangle, draw, rounded corners, fill=blue!15, minimum width=2.8cm, minimum height=1.0cm, font=\small, align=center},
+  stage/.style={rectangle, draw, rounded corners, fill=blue!15, minimum width=2.5cm, minimum height=1.0cm, font=\small, align=center},
   arrow/.style={->, thick, >=stealth},
-  note/.style={font=\footnotesize, text width=2.8cm, align=center}
+  note/.style={font=\footnotesize, text width=2.5cm, align=center}
 ]
-  \node[stage] (S1) at (0,0) {Content\\Embedding};
-  \node[stage] (S2) at (3.5,0) {FAISS\\K-NN 图构建};
-  \node[stage] (S3) at (7,0) {PageRank\\幂迭代};
-  \node[stage] (S4) at (10.5,0) {聚类 \&\\UMAP 降维};
+  \node[stage] (S1) at (0,0) {Description / Content\\Embedding};
+  \node[stage] (S2) at (3.2,0) {Description\\聚类分组};
+  \node[stage] (S3) at (6.4,0) {Content 先验\\+ 图传播};
+  \node[stage] (S4) at (9.6,0) {PCA 坐标\\与产物导出};
 
   \draw[arrow] (S1) -- (S2);
   \draw[arrow] (S2) -- (S3);
   \draw[arrow] (S3) -- (S4);
 
-  \node[note] at (0,-1.5) {sentence-transformers\\all-MiniLM-L6-v2\\384 维向量};
-  \node[note] at (3.5,-1.5) {IVF 索引\\K=15 近邻\\$O(n\log n)$};
-  \node[note] at (7,-1.5) {CSR 稀疏矩阵\\$d=0.82$\\$\sim$20轮收敛};
-  \node[note] at (10.5,-1.5) {HDBSCAN 聚类\\UMAP $\to$ 2D\\生成地形坐标};
-
-  \draw[dashed] (0,-0.8) -- (0,-1.0);
-  \draw[dashed] (3.5,-0.8) -- (3.5,-1.0);
-  \draw[dashed] (7,-0.8) -- (7,-1.0);
-  \draw[dashed] (10.5,-0.8) -- (10.5,-1.0);
+  \node[note] at (0,-1.6) {\texttt{all-MiniLM-L6-v2}\\Description 与 Content\\分别编码};
+  \node[note] at (3.2,-1.6) {MiniBatch KMeans\\簇数按数据规模启发式确定\\定义竞争邻域};
+  \node[note] at (6.4,-1.6) {先计算 Content 原型中心度\\再在簇内构图运行 PageRank\\融合为最终 SkillRank};
+  \node[note] at (9.6,-1.6) {PCA $\rightarrow (x,y)$\\SkillRank $\rightarrow z$\\导出 \texttt{terrain.json}};
 \end{tikzpicture}
-\caption{SkillRank 四阶段计算流程。从左至右依次执行 Content 向量编码、稀疏亲缘图构建、PageRank 迭代求解、语义聚类与可视化降维。}
+\caption{SkillRank 离线计算链路。系统先在 Description 空间划定竞争邻域，再在每个邻域内部融合 Content 原型先验与 PageRank 风格的图传播分。}
 \label{fig:skillrank_pipeline}
 \end{figure}
 
-第一阶段使用 \texttt{all-MiniLM-L6-v2} 模型对所有 Skill 的 Content 和 Description 字段分别进行编码，输出 384 维稠密向量。该模型在 STS（语义文本相似度）基准任务上表现稳定，CPU 环境下推理速度约为每秒 1000 条文本，适合大批量 offline 编码。
+这里有两个关键设计决策。其一，聚类使用 Description 而非 Content。原因在于，Description 表达的是“Skill 是做什么的”，更适合用于定义比较范围；若直接在 Content 空间聚类，容易把风格相似但功能不同的 Skill 混到同一簇。其二，最终分值不是单独依赖图传播，而是采用\textbf{Content 原型中心度 + PageRank 图传播分}的融合形式。前者衡量某个 Skill 是否接近该语义簇内的主流内容原型，后者衡量它是否处在由近邻相互“引用/模仿”形成的结构中心。二者组合后，能够在本文的数据尺度下比单纯的图分或单纯的中心度都更稳定。
 
-第二阶段利用 FAISS IVF 索引为每个 Skill 检索 $K=15$ 个 Content 最近邻，构建稀疏有向亲缘图。图以压缩稀疏行（CSR）格式存储，每条边携带余弦相似度作为传播权重。
-
-第三阶段在 CSR 格式的稀疏图上运行幂迭代，每轮以 \texttt{scipy.sparse} 矩阵-向量乘法实现，时间复杂度严格为 $O(nK)$，约 20 轮迭代至 $L_1$ 收敛阈值 $10^{-6}$。
-
-第四阶段使用 HDBSCAN 对所有 Skill 的 Description embedding 执行密度聚类（自动识别语义主题），再用 UMAP 将 Description embedding 降至二维，与 SkillRank 分共同构成三维地形坐标 $(x, y, z)$，存入 \texttt{skill\_scores} 表，供前端读取渲染。
-
-\section{查询路由模块设计}
+\section{在线查询路由设计}
 \label{sec:query_routing}
 
-查询路由是 Taste 系统对用户（或 Agent API）提供的核心在线服务。整个查询流程如图 \ref{fig:query_flow} 所示：
+Taste Demo 的在线查询流程如图 \ref{fig:query_flow} 所示。为了保证演示阶段的稳定性，在线部分不再实时计算句向量，而是采用轻量级的词法召回与离线分数重排：前端提交任务描述后，后端先用 TF-IDF 在 Description 文本上召回候选，再在候选集中按预计算的 SkillRank 分值重排，返回前 $K$ 个结果。这一设计把“实时语义编码”的复杂度留在离线实验中，把“在线响应稳定性”留给 Demo 系统。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-  step/.style={rectangle, draw, rounded corners, fill=green!15, minimum width=2.5cm, minimum height=0.9cm, font=\footnotesize, align=center},
-  decision/.style={diamond, draw, fill=yellow!15, minimum width=2cm, minimum height=0.7cm, font=\footnotesize, align=center},
+  stagebox/.style={rectangle, draw, rounded corners, fill=green!15, minimum width=2.5cm, minimum height=0.9cm, font=\footnotesize, align=center},
   arrow/.style={->, thick, >=stealth}
 ]
-  \node[step] (A) at (0,0) {接收 context\\和参数 $K$};
-  \node[step] (B) at (3,0) {Redis 缓存\\命中检测};
-  \node[decision] (C) at (6,0) {命中?};
-  \node[step] (D) at (9,0) {直接返回\\缓存结果};
-  \node[step] (E) at (6,-2) {Description\\Embedding};
-  \node[step] (F) at (6,-3.8) {FAISS 检索\\top-$\alpha K$ 候选};
-  \node[step] (G) at (6,-5.6) {按 SkillRank 分\\取 top-$K$};
-  \node[step] (H) at (6,-7.4) {写入 Redis 缓存\\返回结果};
+  \node[stagebox] (A) at (0,0) {输入任务描述\\和参数 $K$};
+  \node[stagebox] (B) at (3.0,0) {TF-IDF\\召回候选 Skill};
+  \node[stagebox] (C) at (6.0,0) {按 SkillRank\\重排候选};
+  \node[stagebox] (D) at (9.0,0) {返回前 $K$ 个\\推荐结果};
+  \node[stagebox] (E) at (12.0,0) {前端高亮\\三维地形节点};
 
   \draw[arrow] (A) -- (B);
   \draw[arrow] (B) -- (C);
-  \draw[arrow] (C) -- node[above, font=\tiny]{是} (D);
-  \draw[arrow] (C) -- node[right, font=\tiny]{否} (E);
-  \draw[arrow] (E) -- (F);
-  \draw[arrow] (F) -- (G);
-  \draw[arrow] (G) -- (H);
+  \draw[arrow] (C) -- (D);
+  \draw[arrow] (D) -- (E);
 \end{tikzpicture}
-\caption{Taste 查询路由流程图。优先命中 Redis 缓存；未命中时执行 Description embedding + FAISS 检索 + SkillRank 条件排序的完整流程，结果写入缓存以备后续复用。}
+\caption{Taste Demo 的在线查询流程。在线阶段只做轻量召回和排序，不重新执行离线的 embedding、聚类与图构建。}
 \label{fig:query_flow}
 \end{figure}
 
-查询流程有意使用 \textbf{Description} embedding 空间（而非 Content 空间）来匹配用户的 context：用户 context 描述的是"我需要什么样的 Skill"，这在语义上与 Skill 的 Description（"我是做什么的"）对齐，而与 Skill 的 Content（"我具体包含什么内容"）并不直接对应。FAISS 检索返回 $\alpha K$（取 $\alpha=7$）个候选后，在候选集内按预计算的 SkillRank 分降序排列，取前 $K$ 个作为最终推荐。
+这一流程的关键点在于“\textbf{候选召回与质量排序分离}”：TF-IDF 负责回答“哪些 Skill 在字面语义上最像当前任务”，SkillRank 负责回答“在这些候选里哪些更值得优先展示”。这种两阶段结构能够保持在线逻辑简单，同时继续保留离线质量评估的价值。
 
-对于已积累行为信号的 Skill，系统以加权融合方式修正最终得分：
-
-\begin{equation}
-    \label{eq:final_score}
-    \mathrm{Score}(s_i) = (1 - \lambda) \cdot SR(s_i) + \lambda \cdot B(s_i)
-\end{equation}
-
-其中 $B(s_i)$ 为行为分（由点击率、选中率和平均停留时长归一化计算），$\lambda$ 为行为权重，系统冷启动阶段 $\lambda=0$，随行为数据积累线性增长至上限 $\lambda=0.3$。
-
-\section{可视化前端模块设计}
+\section{前端与接口设计}
 \label{sec:frontend_design}
 
-Taste 的前端可视化界面将 SkillRank 的抽象计算结果转化为用户可直接感知和操作的视觉体验。界面布局分为三个区域：左侧为三维语义地形图（主要展示区），右侧上方为查询输入区，右侧下方为推荐结果列表区，如图 \ref{fig:ui_layout} 所示。
+前端界面保持了本文提出的“三维语义地形图 + 查询输入区 + 推荐结果列表区”的交互结构，布局示意如图 \ref{fig:ui_layout} 所示。左侧 Plotly.js 三维散点图承载全量 Skill 的空间分布与质量高度，右侧输入区负责接收任务描述和推荐数量，右侧下方则展示当前查询对应的 Top-$K$ Skill 结果卡片。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[font=\small]
-  % 外框
   \draw[rounded corners, thick] (0,0) rectangle (12,7);
-  \node at (6,6.6) {\textbf{Taste — Agent Skill 发现平台}};
+  \node at (6,6.6) {\textbf{Taste Demo 页面布局}};
 
-  % 左侧三维地形图区域
   \draw[fill=gray!10, rounded corners] (0.2,0.2) rectangle (7.8,6.2);
-  \node at (4,5.8) {\small 三维语义地形图（Plotly.js scatter3d）};
-  % 模拟地形散点
-  \foreach \x/\y in {1.5/3, 2/4.5, 2.5/2.5, 3/4, 3.5/3.5, 4/5, 4.5/4, 5/3, 5.5/4.5, 6/3.5, 6.5/4.8, 7/3.2} {
-    \filldraw[blue!40] (\x,\y) circle (3pt);
+  \node at (4,5.8) {\small 左侧：三维语义地形图（Plotly scatter3d）};
+  \node[font=\footnotesize, gray] at (4,5.35) {点的 XY 为语义坐标，Z 为 SkillRank 分值};
+  \foreach \x/\y in {1.2/2.2,1.6/3.0,2.0/2.6,2.4/4.0,2.9/3.1,3.3/4.4,3.8/3.2,4.1/2.6,4.5/4.1,5.0/3.0,5.5/4.5,6.0/3.4,6.5/2.8} {
+    \filldraw[blue!40] (\x,\y) circle (2.5pt);
   }
-  % 高亮推荐 Skill
-  \filldraw[orange, thick] (3,4) circle (5pt);
-  \filldraw[orange, thick] (5,3) circle (5pt);
-  \filldraw[orange, thick] (4,5) circle (5pt);
-  \node[font=\footnotesize] at (4,1.2) {灰点=全量 Skill，橙点=当前查询的推荐 Skill};
-  \node[font=\footnotesize, gray] at (4,0.7) {可旋转 · 可缩放 · 可点击};
+  \filldraw[orange, thick] (3.3,4.4) circle (4.5pt);
+  \filldraw[orange, thick] (4.1,2.6) circle (4.5pt);
+  \filldraw[orange, thick] (5.5,4.5) circle (4.5pt);
 
-  % 右侧查询区
-  \draw[fill=white, rounded corners] (8,4.5) rectangle (11.8,6.2);
-  \node at (9.9,5.9) {\small 查询输入};
-  \draw[fill=white] (8.2,5.4) rectangle (11.6,5.7);
-  \node[font=\footnotesize, gray] at (9.9,5.55) {输入任务描述...};
-  \draw[fill=white] (8.2,4.9) rectangle (11.6,5.2);
-  \node[font=\footnotesize, gray] at (9.9,5.05) {K (Skill 数量): 10};
-  \draw[fill=blue!60, rounded corners] (9,4.6) rectangle (10.8,4.9);
-  \node[font=\footnotesize, white] at (9.9,4.75) {获取推荐};
+  \draw[fill=white, rounded corners] (8,4.6) rectangle (11.8,6.2);
+  \node at (9.9,5.95) {\small 右上：查询输入区};
+  \draw[fill=white] (8.2,5.35) rectangle (11.6,5.7);
+  \node[font=\footnotesize, gray] at (9.9,5.52) {任务描述};
+  \draw[fill=white] (8.2,4.92) rectangle (11.6,5.15);
+  \node[font=\footnotesize, gray] at (9.9,5.03) {返回数量 $K$};
+  \draw[fill=orange!80, rounded corners] (8.9,4.68) rectangle (10.9,4.9);
+  \node[font=\footnotesize, white] at (9.9,4.79) {获取推荐};
 
-  % 右侧推荐结果区
   \draw[fill=white, rounded corners] (8,0.2) rectangle (11.8,4.3);
-  \node at (9.9,4.0) {\small 推荐结果（前 K 个）};
-  \foreach \i/\name/\score in {1/python-optimizer/0.91, 2/code-style-guide/0.87, 3/async-best-practice/0.83} {
-    \draw[fill=orange!10, rounded corners] (8.1, 4.2-\i*0.9) rectangle (11.7, 4.2-\i*0.9+0.75);
-    \node[font=\tiny, left] at (11.6, 4.2-\i*0.9+0.55) {\score};
-    \node[font=\footnotesize, anchor=west] at (8.2, 4.2-\i*0.9+0.37) {\i.\ \name};
+  \node at (9.9,4.0) {\small 右下：推荐结果卡片};
+  \foreach \i/\name/\score in {1/code-quality-fix-all/0.684, 2/debugging-methodology/0.652, 3/interdoc/0.611} {
+    \draw[fill=orange!10, rounded corners] (8.1,4.1-\i*0.95) rectangle (11.7,4.1-\i*0.95+0.78);
+    \node[font=\footnotesize, anchor=west] at (8.25,4.1-\i*0.95+0.42) {\i.\ \name};
+    \node[font=\tiny, right] at (11.55,4.1-\i*0.95+0.42) {SR=\score};
   }
-  \node[font=\footnotesize, gray] at (9.9,0.9) {...（共 K 个）};
 \end{tikzpicture}
-\caption{Taste 前端界面布局示意图。左侧为三维语义地形图，橙色高亮节点为当前查询的推荐 Skill；右上为查询输入区；右下为推荐结果列表。}
+\caption{Taste Demo 的页面布局。左侧展示全量三维语义地形，右侧负责输入任务描述并展示 Top-$K$ 结果。}
 \label{fig:ui_layout}
 \end{figure}
 
-三维地形图使用 Plotly.js \texttt{scatter3d} 组件渲染，XY 坐标来自 UMAP 降维结果，Z 坐标为 SkillRank 分值，聚类标签决定节点颜色。用户提交查询后，前端将推荐 Skill 的节点切换为橙色并放大，在地形图上形成直观的"当前任务最优区域"标记。行为信号（点击、选中、停留时长）在交互过程中透明采集，通过 \texttt{/api/signals} 接口异步上报。
-
-\section{API 接口设计}
-\label{sec:api_design}
-
-Taste 系统对外暴露的核心 REST API 接口如表 \ref{tab:api} 所示。\texttt{/api/recommend} 是最核心的接口，直接面向 Agent 的程序化调用场景，设计上追求极简：输入仅需 context 文本和数量 $K$，输出为前 $K$ 个 Skill 的完整信息列表（含 Description、Content 和 SkillRank 分值），Agent 无需理解任何内部排序机制即可直接使用返回结果。
+原型系统最终对外暴露的接口非常精简，如表 \ref{tab:api} 所示。与完整云平台相比，这些接口全部围绕“读取已计算好的离线产物”设计，没有额外的管理端接口和数据库读写逻辑，因此更适合论文阶段的稳定复现。
 
 \begin{table}[htbp]
 \centering
-\caption{Taste 核心 API 接口设计}
+\caption{Taste 原型的核心接口}
 \label{tab:api}
-\begin{tabular}{lllp{5.5cm}}
+\begin{tabular}{llp{6.5cm}}
 \toprule
-接口路径 & 方法 & 主要参数 & 功能说明 \\
+接口路径 & 方法 & 功能说明 \\
 \midrule
-\texttt{/api/recommend} & POST & context, K & 语义路由推荐：输入 context 返回前 $K$ 个最优 Skill \\
-\texttt{/api/skills} & GET & page, cluster\_id, min\_score & 分页获取 Skill 列表，支持按聚类和分值过滤 \\
-\texttt{/api/skills/\{id\}} & GET & — & 获取单个 Skill 详情（含 Content 全文和 SkillRank 分析） \\
-\texttt{/api/terrain} & GET & — & 获取全量 Skill 三维坐标，用于前端地形图初始化 \\
-\texttt{/api/signals} & POST & session\_id, skill\_id, event\_type & 上报用户行为信号（点击/选中/停留） \\
-\texttt{/api/scores/refresh} & POST & — & 触发 SkillRank 全量重算（管理员接口） \\
+\texttt{/api/terrain} & GET & 返回全量 Skill 的二维坐标、聚类编号、SkillRank 分值和元信息，用于初始化三维地形图 \\
+\texttt{/api/recommend} & POST & 接收任务描述与数量 $K$，执行 TF-IDF 候选召回和 SkillRank 重排，返回 Top-$K$ Skill \\
+\texttt{/api/skills?id=...} & GET & 返回单个 Skill 的基础信息，便于前端按需查看节点详情 \\
+\texttt{/index.html} & GET & 返回静态前端页面，前端通过 URL 参数可直接复现指定查询状态 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -255,4 +210,4 @@ Taste 系统对外暴露的核心 REST API 接口如表 \ref{tab:api} 所示。\
 \section{本章小结}
 \label{sec:chap3_summary}
 
-本章从系统整体架构出发，完整阐述了 Taste 的设计方案。系统采用四层架构（数据存储、算法计算、服务接口、前端交互），各层职责清晰，支持独立扩展。数据接入模块通过三阶段清洗保证数据质量；SkillRank 计算模块以四阶段流程完成从原始文本到质量分值的完整计算链路；查询路由模块实现了 Redis 缓存优先、FAISS 检索加速的高效在线推荐；可视化前端将抽象建模结果转化为直观的三维地形交互体验；核心 API 接口面向 Agent 程序化调用设计，极简输入极简输出。第四章将进一步介绍上述各模块的具体实现细节与关键工程决策。
+本章从系统设计角度明确了 Taste 原型的实现边界：以 GitHub Skill 数据集为底层资产，以离线聚类与 SkillRank 计算作为核心引擎，以 JSON/NPY 产物作为在线 Demo 的唯一输入，并以 Plotly.js 三维语义地形图完成可视化呈现。这样的设计既服务于论文实验的可复现性，也保证了系统演示能够直接建立在真实实验结果之上。第四章将进一步说明这些设计在代码中的具体落地方式。

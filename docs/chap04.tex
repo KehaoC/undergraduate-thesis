@@ -8,147 +8,213 @@
 \section{开发环境与技术栈}
 \label{sec:dev_env}
 
-Taste 系统的服务端基于 Python 3.11 构建，选择 Python 的核心原因是其在自然语言处理和机器学习生态上的无可替代性——sentence-transformers、FAISS、UMAP、HDBSCAN 等 SkillRank 算法所依赖的核心库均以 Python 为第一支持语言，在 Python 环境内可以以最低的集成成本将这些组件拼合为完整的算法流水线。Web 框架选用 FastAPI 0.110，其基于 Pydantic 的数据验证和异步（async/await）原生支持，使得 API 层的吞吐量在 I/O 密集型场景（embedding 查询、数据库读写）下显著优于同步框架。数据库使用 PostgreSQL 16，配合 pgvector 0.7 扩展在关系型数据库中原生存储和检索 384 维 embedding 向量，避免了引入独立向量数据库的运维复杂性。Redis 7.2 提供缓存层，Celery 5.3 + Redis 作为消息代理实现 SkillRank 批量计算的异步调度。前端基于 React 18 + TypeScript，可视化核心组件使用 Plotly.js 2.30，整个项目通过 Docker Compose 打包，以容器化方式部署运行。
+Taste 原型按照“离线实验流水线 + 在线演示 Demo + 论文产物管理”三个部分实现。与典型的数据库驱动 Web 平台不同，本文把研究阶段最重要的中间状态全部显式落盘：数据集、embedding、聚类结果、SkillRank 分值、实验日志和截图均以文件形式保留。这一实现方式有两个直接优势：第一，离线实验可以在固定输入上重复运行，便于控制变量；第二，在线 Demo 只读取预计算产物，不承担大规模 embedding 和图计算，因此工程结构更简单，也更稳定。
 
-\section{数据采集与清洗}
-\label{sec:data_impl}
-
-数据采集以 Python requests 库实现对 ClawHub 的结构化爬取。ClawHub 的 Skill 列表以分页形式展示，每页约 20 条；爬虫顺序遍历全部页面，对每条 Skill 访问详情页提取 Description 和 Content 全文。对含 GitHub 仓库链接的 Skill，系统以个人访问令牌（PAT）调用 GitHub REST API 的 \texttt{GET /repos/:owner/:repo} 端点获取 Star 数、Fork 数和最近推送时间。全程以 asyncio 控制并发度为 5，每次请求附加 0.2 秒延迟，指数退避处理 HTTP 429 和超时错误，确保爬虫行为对目标平台友好。
-
-表 \ref{tab:dataset_stats} 展示了数据集的关键统计指标。
+本文的实际实验环境为 \texttt{code/.venv} 中的 Python 3.12.9，项目依赖通过 \texttt{pyproject.toml} 固定，最低兼容版本为 Python 3.11。主要技术栈如表 \ref{tab:tech_stack} 所示。
 
 \begin{table}[htbp]
 \centering
-\caption{实验数据集统计信息}
-\label{tab:dataset_stats}
-\begin{tabular}{lr}
+\caption{Taste 原型的主要实现技术栈}
+\label{tab:tech_stack}
+\begin{tabular}{p{2.1cm}p{3.4cm}p{6.0cm}}
 \toprule
-统计项 & 数值 \\
+模块 & 主要技术 & 用途说明 \\
 \midrule
-ClawHub 爬取原始条数 & 3,241 \\
-精确去重后保留 & 2,856 \\
-近重复去重后保留（余弦相似度 $>$ 0.98） & 2,621 \\
-有效性过滤后保留 & 2,103 \\
-其中含 GitHub Star 数据的条目 & 2,103 \\
-GitHub Star 数范围 & 1 — 14,832 \\
-GitHub Star 数中位数 & 187 \\
-GitHub Star 数均值 & 743 \\
-Description 平均字符数 & 312 \\
-Content 平均字符数 & 1,847 \\
-HDBSCAN 自动识别语义聚类数 & 23 \\
-被标记为噪声点的 Skill 比例 & 4.2\% \\
+文本编码 & Sentence-Transformers & 计算 Description 与 Content embedding \\
+聚类与降维 & scikit-learn & MiniBatch KMeans 聚类与 PCA 坐标生成 \\
+图计算与统计 & NumPy + SciPy & 稀疏转移矩阵、PageRank 迭代与 Spearman 评测 \\
+近邻检索 & FAISS & 构造近似 K-NN 图，保留大规模扩展路径 \\
+在线服务 & Python \path{http.server} & 提供 \path{/api/terrain}、\path{/api/recommend} 与静态页面 \\
+前端展示 & HTML/CSS/JS + Plotly.js & 绘制真实三维语义地形并展示推荐结果 \\
+结果管理 & JSON / NPY / PNG & 保存日志、图表数据、截图和 Demo 产物 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-GitHub Star 数的分布呈典型的长尾形态（图 \ref{fig:star_dist}），这与开源生态中普遍观察到的马太效应一致：少数 Skill 积累了绝大多数 Star，而大量 Skill 的 Star 数集中在 100 以下。这一分布特性意味着，若直接以 Star 数的绝对值作为排序依据，低 Star 数的高质量新 Skill 将长期被埋没——这也正是 SkillRank 需要解决的问题之一：通过结构性信号为这些"被低估"的 Skill 提供更公平的质量评估。
+这里有两个实现取舍值得强调。其一，本文没有引入数据库、消息队列或独立前端框架，而是把重点集中在排序算法与实验复现链路上；其二，在线服务使用标准库 \texttt{ThreadingHTTPServer} 即可满足演示需求，因为真正昂贵的计算已经在离线阶段完成。对于本科论文场景，这种“研究产物优先”的实现路径比过度工程化更合适。
+
+\section{数据资产组织与统计}
+\label{sec:data_impl}
+
+实验使用的数据资产保存在 \texttt{code/data/} 目录下，其中 \texttt{skills\_full.json} 为完整数据集，\texttt{skills\_100.json} 与 \texttt{skills\_1000.json} 为从完整数据资产中抽样得到的两个实验子集。三套数据的统计特征见表 \ref{tab:dataset_stats_impl}。
+
+\begin{table}[htbp]
+\centering
+\caption{Taste 数据资产统计信息}
+\label{tab:dataset_stats_impl}
+\begin{tabular}{lrrr}
+\toprule
+统计项 & 完整数据集 & 100 子集 & 1000 子集 \\
+\midrule
+Skill 数量 & 10028 & 100 & 1000 \\
+关联 GitHub 仓库数 & 2430 & 54 & 385 \\
+GitHub Star 最小值 & 1 & 1 & 1 \\
+GitHub Star 最大值 & 117464 & 3588 & 56336 \\
+GitHub Star 中位数 & 10.00 & 10.00 & 10.00 \\
+GitHub Star 均值 & 517.21 & 207.01 & 569.92 \\
+Description 平均字符数 & 334.20 & 340.81 & 328.30 \\
+Content 平均字符数 & 25110.07 & 25304.52 & 25193.55 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+从完整数据集的统计结果可以看出，当前公开 Skill 生态具有明显的长尾特征：GitHub Star 中位数仅为 10，但最大值达到 117464，说明少数热门仓库承载了大量 Skill，而绝大部分 Skill 仍处于低热度区域。图 \ref{fig:star_dist_impl} 给出了完整数据集的 Star 分布。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  width=10cm, height=5cm,
-  xlabel={GitHub Star 数（对数刻度）},
-  ylabel={Skill 数量},
-  xmode=log,
+  width=12.2cm,
+  height=6.5cm,
   ybar,
-  bar width=12pt,
-  xtick={1,10,100,1000,10000},
-  xticklabels={1,10,100,1K,10K},
-  ymin=0, ymax=650,
+  bar width=8pt,
+  ymin=0,
+  ymax=4000,
+  ylabel={Skill 数量},
+  xlabel={GitHub Star 区间},
+  symbolic x coords={{1-3},{3-10},{10-30},{30-100},{100-300},{300-1000},{1k-3k},{3k-10k},{10k-30k},{30k-100k},{100k+}},
+  xtick=data,
+  x tick label style={rotate=35, anchor=east, font=\footnotesize},
   grid=major,
   grid style={dashed, gray!30},
-  title={实验数据集 GitHub Star 分布（$n=2103$）}
 ]
-\addplot[fill=blue!40] coordinates {
-  (2,  580)
-  (7,  420)
-  (30, 390)
-  (100, 310)
-  (316, 220)
-  (1000, 130)
-  (3162, 45)
-  (10000, 8)
+\addplot[fill=blue!45] coordinates {
+  ({1-3},3711)
+  ({3-10},982)
+  ({10-30},1469)
+  ({30-100},541)
+  ({100-300},2524)
+  ({300-1000},308)
+  ({1k-3k},114)
+  ({3k-10k},278)
+  ({10k-30k},65)
+  ({30k-100k},33)
+  ({100k+},3)
 };
 \end{axis}
 \end{tikzpicture}
-\caption{实验数据集 GitHub Star 数分布直方图（对数 X 轴）。分布呈长尾形态，约 57\% 的 Skill Star 数低于 100。}
-\label{fig:star_dist}
+\caption{完整数据集的 GitHub Star 分布。46.8\% 的 Skill 所属仓库 Star 数低于 10，66.8\% 低于 100，呈现显著长尾。}
+\label{fig:star_dist_impl}
 \end{figure}
 
-\section{SkillRank 算法实现}
+本次论文定稿阶段的主实验只运行 100 和 1000 两个规模，原因并非代码无法支持更大规模，而是为了在当晚实验预算内优先保证两组结果的完整性、日志可追溯性和图表可复核性。与之对应，10000 规模的数据路径和代码路径都已准备好，但本轮不盲目执行。
+
+\section{SkillRank 离线流水线实现}
 \label{sec:skillrank_impl}
 
-\subsection{Content Embedding 计算}
+\subsection{双通道文本编码}
 
-系统加载 \texttt{all-MiniLM-L6-v2} 模型对每个 Skill 的 Content 和 Description 字段分别编码。批量推理时 batch size 设为 256，Content 字段超过 512 token 的部分截断处理——截断的合理性在于 Skill Content 的核心信息通常集中在前半部分，后半部分多为使用示例或附加说明。全量 2,103 条 Skill 的双字段 embedding 计算（Content + Description，共 4,206 次前向推理）在 CPU 环境下耗时约 4.2 分钟。embedding 向量以 float32 格式存入 PostgreSQL 的 pgvector 列，并在内存中保留 numpy 矩阵副本，供 FAISS 索引直接使用。
+流水线的起点是对 Description 与 Content 两个字段分别编码。本文在 \texttt{pipeline.py} 中统一使用 \texttt{sentence-transformers/all-MiniLM-L6-v2} 模型，先对原始文本做空白归一化，再将 Description 截断到 480 字符、Content 截断到 2400 字符，然后以 batch size 48 批量编码。Description 与 Content 分开编码的原因与第二章的建模保持一致：Description 用于划定竞争邻域，Content 用于衡量内容质量；若两者混用，会把“能否被找到”和“被找到后是否有价值”这两个问题重新纠缠在一起。
 
-\subsection{FAISS K-NN 图构建}
+embedding 结果以 \texttt{.npy} 文件缓存到结果目录下，避免重复运行时重复推理。这样一来，后续调参可以只重跑聚类、图构建与评测，而不必重新进行句向量编码。
 
-将所有 Content embedding 矩阵（形状 $2103 \times 384$）传入 \texttt{faiss.IndexIVFFlat} 索引。IVF 训练阶段以 $\lceil\sqrt{2103}\rceil = 46$ 个聚类中心划分向量空间，搜索时 \texttt{nprobe=12}（探测 12 个候选 Voronoi 单元）。对每个向量检索 16 个最近邻（第 0 位为自身，取第 1-15 位），召回率（相对精确 K-NN 的邻居重叠比例）约为 95.3\%。构建完成后，以 $(i, j, w_{ij})$ 三元组格式存储图边，其中 $w_{ij}$ 为余弦相似度，使用 \texttt{scipy.sparse.csr\_matrix} 构建稀疏权重矩阵 $\mathbf{W} \in \mathbb{R}^{n \times n}$，出度归一化后得到随机游走转移矩阵 $\hat{\mathbf{W}}$。
+\subsection{Description 聚类与 Content 原型先验}
 
-\subsection{PageRank 幂迭代}
+Description embedding 进入 \texttt{MiniBatchKMeans} 聚类模块。簇数采用启发式函数
+\[
+n_{\text{cluster}} = \max(5,\ \min(24,\ \lfloor n/50 \rfloor))
+\]
+自动确定，因此 100 规模实验默认得到 5 个簇，1000 规模实验默认得到 20 个簇。与基于密度的聚类相比，这一方案在当前数据规模下更稳定，也更容易控制最小簇大小，便于后续 within-cluster 评测。
 
-幂迭代的核心循环如下：初始化分数向量 $\mathbf{r}^{(0)} = \mathbf{1}/n$，每轮更新：
+在每个聚类内部，系统先计算 Content embedding 到簇中心的归一化相似度，记为 Content 原型先验分。它衡量某个 Skill 是否靠近该语义簇内部最常见、最居中的内容表达方式。这个分数既可作为单独基线，也可作为最终 SkillRank 的一个组成部分。
 
-\begin{equation}
-    \label{eq:power_iter}
-    \mathbf{r}^{(t+1)} = (1-d)\cdot\mathbf{1}/n + d \cdot \hat{\mathbf{W}}^\top \mathbf{r}^{(t)}
-\end{equation}
+\subsection{簇内 K-NN 图与 PageRank 融合评分}
 
-每轮通过 \texttt{scipy.sparse} 稀疏矩阵-向量乘法实现，单轮计算耗时约 8ms（$n=2103, K=15$）。收敛判断为 $\|\mathbf{r}^{(t+1)} - \mathbf{r}^{(t)}\|_1 < 10^{-6}$，在最优参数配置（$d=0.82$）下通常于第 18 轮收敛。收敛后的分数向量 $\mathbf{r}$ 归一化至 $[0, 1]$ 区间写入数据库。
+真正的 SkillRank 计算在每个语义簇内部进行。实现时，系统先在簇内构建 Content embedding 的 Top-$K$ 邻接关系图，再按照相似度减去阈值 \texttt{similarity\_floor} 后做出度归一化，得到稀疏转移矩阵。随后在该转移矩阵上执行 PageRank 风格幂迭代，直到 $\ell_1$ 误差低于 $10^{-6}$ 或达到最大迭代轮数。
 
-\subsection{语义聚类与 UMAP 降维}
+本文的实现并未把图传播分直接作为最终答案，而是采用下面的融合方式：
+\[
+\mathrm{Score}(s_i) = (1-\lambda)\cdot \mathrm{Prior}(s_i) + \lambda \cdot \mathrm{PageRank}(s_i)
+\]
+其中 $\mathrm{Prior}(s_i)$ 为 Content 原型先验分，$\lambda$ 对应代码中的 \texttt{pagerank\_weight}。这一设计是本次实现与最初纯图传播设想的一个关键差异。实际实验表明，在 100 和 1000 这两个规模上，融合后的结果比只使用图传播分更稳定，也更容易通过 AutoResearch 找到鲁棒配置。
 
-HDBSCAN 聚类在 Description embedding 矩阵上执行，最小聚类规模 $\min\_cluster\_size = \max(5, \lfloor n/200 \rfloor) = 10$（$n=2103$）。算法识别出 23 个语义聚类，聚类规模从 14 至 198 个 Skill 不等，最大聚类（Python 代码生成类）包含 198 个 Skill，最小聚类（特定 CI/CD 配置类）包含 14 个 Skill。约 4.2\% 的 Skill（88 条）被标记为噪声点，这些 Skill 在语义上与任何主题聚类距离过远，通常是功能定义过于模糊或 Description 质量较差的条目。
+\subsection{二维坐标与三维地形产物}
 
-UMAP 以 \texttt{n\_components=2, n\_neighbors=15, min\_dist=0.1} 参数运行，将 384 维 Description embedding 压缩为 $(x, y)$ 二维坐标，与 SkillRank 分值 $z$ 共同构成三维语义地形坐标，写入 \texttt{skill\_scores} 表。
+为了给前端 Demo 提供直观的可视化输入，Description embedding 进一步通过 PCA 压缩到二维坐标 $(x, y)$；融合后的 SkillRank 分值作为三维地形的 $z$ 轴高度。系统最终导出 \texttt{terrain.json}、\texttt{description\_embeddings\_for\_demo.npy} 与 \texttt{skillrank\_scores\_for\_demo.npy} 三类文件，使在线 Demo 可以直接读取并渲染三维语义地形，而无需重新执行离线流水线。
 
-\section{AutoResearch 迭代调优}
+\section{AutoResearch 调参与实验组织}
 \label{sec:autoresearch_impl}
 
-SkillRank 算法包含若干关键超参数，每个参数的选择都对最终的 within-cluster Spearman $\rho$ 有非线性影响。本文设计了 AutoResearch 风格的自动化迭代调优框架，借鉴 AI Scientist\cite{lu2024aiscientist} 等工作的方法论，将超参数优化过程转化为 Agent 驱动的实验迭代，每轮只修改一个变量，以 $\rho$ 提升为目标，提升则接受，否则回滚。
+为了使调参过程可追溯、可复现，本文实现了一个单变量、邻域搜索风格的 AutoResearch 框架。它的核心规则非常简单：固定数据集与评测脚本，每轮只尝试改动一个参数，若 within-cluster Spearman $\rho$ 提升，则接受；否则回滚。搜索空间覆盖 \texttt{graph\_k}、\texttt{damping}、\texttt{nprobe}、\texttt{pagerank\_weight} 与 \texttt{similarity\_floor} 五个参数。
 
-框架结构如下：固定评测脚本（接收算法配置文件，输出加权平均 Spearman $\rho$）；固定数据集（$n=1000$ 的随机子集，以加快每轮迭代速度）；Agent 可修改的唯一文件为 \texttt{ranking\_config.json}，包含 $K$、$d$、\texttt{nprobe}、截断策略等参数。每轮迭代的完整周期约 70 秒（SkillRank 计算 45s + 评测 8s + Agent 分析 17s），10 轮完整迭代在约 12 分钟内完成。
-
-表 \ref{tab:autoresearch_trace} 记录了 10 轮迭代的完整过程。
+主调参过程在 1000 规模上完成，其完整轨迹保存在 \path{code/results/nightly-20260330-v2/logs/autoresearch_trace.json} 中。对应的实验轨迹如表 \ref{tab:autoresearch_trace_impl} 所示。
 
 \begin{table}[htbp]
 \centering
-\caption{AutoResearch 迭代优化轨迹（$n=1000$ 子集，within-cluster Spearman $\rho$）}
-\label{tab:autoresearch_trace}
-\begin{tabular}{cllcc}
+\caption{1000 规模主实验的 AutoResearch 调优轨迹}
+\label{tab:autoresearch_trace_impl}
+\begin{tabular}{cccc}
 \toprule
-轮次 & 修改参数 & 修改内容与假设 & $\rho$ & 是否接受 \\
+轮次 & 调整参数 & 参数变化 & $\rho$ \\
 \midrule
-0（基线） & — & 初始配置：$K=10, d=0.85, \mathrm{nprobe}=8$ & 0.61 & — \\
-1 & $K$ & $K: 10 \to 15$，期望扩大亲缘捕获范围 & 0.66 & \checkmark \\
-2 & $d$ & $d: 0.85 \to 0.82$，减少随机游走引入的噪声 & 0.69 & \checkmark \\
-3 & \texttt{nprobe} & $\mathrm{nprobe}: 8 \to 16$，提升 FAISS 召回质量 & 0.70 & \checkmark \\
-4 & $K$ & $K: 15 \to 20$，继续扩大 & 0.69 & $\times$（回滚） \\
-5 & 权重归一化 & 出度归一化改为全局归一化 & 0.71 & \checkmark \\
-6 & $d$ & $d: 0.82 \to 0.80$，进一步减噪 & 0.70 & $\times$（回滚） \\
-7 & 截断策略 & Content 截断从 512 token 改为 256 token & 0.70 & $\times$（回滚） \\
-8 & 迭代轮数上限 & 从 50 轮改为 100 轮（允许更充分收敛） & 0.71 & —（已收敛）\\
-9--10 & 多次尝试 & 其余参数调整均未超过 0.71 & 0.71 & $\times$ \\
-\midrule
-\textbf{最终} & — & $K=15, d=0.82, \mathrm{nprobe}=16$，全局归一化 & \textbf{0.71} & — \\
+0 & 基线 & 初始配置 & 0.0464 \\
+1 & \texttt{pagerank\_weight} & 0.30 $\rightarrow$ 0.10 & 0.0516 \\
+2 & \texttt{graph\_k} & 12 $\rightarrow$ 15 & 0.0527 \\
+3 & \texttt{similarity\_floor} & 0.10 $\rightarrow$ 0.15 & 0.0549 \\
+4 & \texttt{damping} & 0.82 $\rightarrow$ 0.78 & 0.0562 \\
+5 & 停止 & 无进一步提升 & 0.0562 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-从迭代轨迹中可以观察到几个规律：邻居数 $K$ 的增大在初期带来明显提升（0.61 → 0.66），但超过 15 后边际收益消失甚至反转，原因是 $K$ 过大会引入语义距离较远的噪声边，稀释真正的亲缘信号；阻尼因子 $d$ 在 0.82 时取得最优，过高（0.85）时图传播权重过重，少数高度互联节点形成"权威陷阱"，过低（0.80）时随机游走成分过大，质量信号扩散不充分；FAISS 召回精度的提升（nprobe 8 → 16）带来了 0.01 的稳定提升，说明图质量对 SkillRank 的最终效果确实有影响，但边际收益有限。
+可以看到，当前数据规模下最有效的改动不是盲目增加图传播权重，而是降低 \texttt{pagerank\_weight}、适度增大邻居数并提高相似度截断阈值。这说明在 1000 规模上，Content 原型先验已经携带了较强的基础信号，图传播分更适合扮演“局部修正项”而非“唯一评分源”。100 规模的独立调参与主实验保持同一搜索策略，结果保存于 \texttt{code/results/scale-100-tuned/} 目录。
 
-\section{前端实现}
+\section{Demo 系统实现与 3D 可视化}
 \label{sec:frontend_impl}
 
-前端页面以 React 18 + TypeScript 开发，Plotly.js 的 \texttt{scatter3d} 图表是可视化的核心组件。页面初始化时从 \texttt{/api/terrain} 一次性拉取全量 Skill 的三维坐标和聚类标签（JSON 格式，约 180KB），使用 WebGL 渲染后端绘制所有数据点，每个语义聚类以不同颜色区分，点的透明度根据 SkillRank 分值设置（高分点更不透明）。用户通过鼠标拖拽旋转视图、滚轮缩放，点击任意 Skill 节点弹出 Popover 展示该 Skill 的名称、Description 和 SkillRank 分值。
+Taste Demo 的在线部分由 \texttt{serve\_demo.py} 启动，服务端在初始化阶段读取预计算的 \texttt{terrain.json} 与 \texttt{skillrank\_scores\_for\_demo.npy}。前端页面为一个纯静态 HTML/CSS/JavaScript 页面，核心逻辑位于 \texttt{demo\_static/app.js}。与离线流水线不同，在线查询不再实时编码句向量，而是采用“TF-IDF 候选召回 + 预计算 SkillRank 重排”的轻量结构：先在 Description 文本上召回候选，再按离线分值与词法相似度的加权分进行重排，返回 Top-$K$ 结果。
 
-查询交互的完整端到端流程如下：用户在输入框填写任务 context（例如"帮我用 Python 写一个异步 HTTP 爬虫"），拖动滑块设定 $K=10$，点击"获取推荐"按钮；前端发送 \texttt{POST /api/recommend} 请求；后端执行 Description embedding + FAISS 检索 + SkillRank 条件排序，返回 $K$ 个 Skill 的 ID 和元信息；前端将这 $K$ 个节点切换为橙色并放大为原始尺寸的 2 倍，右侧面板以卡片列表展示每个推荐 Skill 的名称、Description 摘要和 SkillRank 分值，卡片点击可展开查看完整 Content。整个交互从提交到地形图高亮更新的端到端延迟约为 140ms（P50），320ms（P99），满足设计目标。
+前端地形图使用 Plotly.js 的 \texttt{scatter3d} 组件绘制。代码中保留了无 WebGL 环境下的二维回退逻辑，但论文正文展示与截图全部采用了 Chrome 环境下验证通过的真实三维渲染结果。图 \ref{fig:demo_3d_impl} 展示了论文最终使用的 3D Demo 截图。
 
-行为信号采集在用户交互过程中透明进行，不打断主要操作流程：卡片展开时记录"点击"事件，用户在卡片上停留超过 3 秒记录"阅读"事件，用户通过页面上的"使用此 Skill"按钮记录"选中"事件。这些事件数据通过 Web Beacon API 异步上报至 \texttt{/api/signals}，即使用户关闭页面也不会丢失最后一次事件。
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{image/chap04/demo-home-3d.png}
+
+\vspace{0.3em}
+{\footnotesize （a）3D 首页，总览 1000 条 Skill 的语义地形}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{image/chap04/demo-query-3d-test.png}
+
+\vspace{0.3em}
+{\footnotesize （b）输入查询后高亮推荐节点与结果列表}
+\end{minipage}
+\caption{Taste Demo 的真实三维语义地形界面。论文最终展示使用的均为 \texttt{scatter3d} 结果，而非二维回退视图。}
+\label{fig:demo_3d_impl}
+\end{figure}
+
+为了验证 Demo 是否与离线实验产物一致，本文以查询“\texttt{help me review a pull request and fix CI issues}”进行了在线检查。系统返回的前 3 个结果分别为 \texttt{code-quality-fix-all}、\texttt{debugging-methodology} 与 \texttt{interdoc}，说明在线层确实在调用离线保存的 SkillRank 分值，而不是随机展示地形上的高点。
+
+\section{日志保留与复现产物}
+\label{sec:logs_impl}
+
+本文特别强调实验记录的可追溯性。每次离线运行后，系统都会把摘要、参数、聚类信息、调参轨迹、截图和终端输出保存在版本化目录中。表 \ref{tab:artifact_logs} 列出了论文定稿阶段最关键的实验产物。
+
+\begin{table}[htbp]
+\centering
+\caption{论文定稿阶段保留的关键实验产物}
+\label{tab:artifact_logs}
+\begin{tabular}{p{4.9cm}p{5.5cm}}
+\toprule
+文件或目录 & 用途说明 \\
+\midrule
+\path{code/results/nightly-20260330-v2/summary.json} & 1000 规模主实验汇总，包含排序结果、聚类敏感性、案例分析与调优配置 \\
+\path{code/results/scale-100-tuned/summary.json} & 100 规模独立调优实验汇总 \\
+\path{code/results/nightly-20260330-v2-run.log} & 1000 规模主实验终端日志 \\
+\path{code/results/scale-100-tuned-run.log} & 100 规模实验终端日志 \\
+\path{code/results/thesis-ready-summary-20260330.json} & 用于论文回填的整理版结果摘要 \\
+\path{image/chap04/demo-home-3d.png} 与 \path{demo-query-3d-test.png} & 论文中直接使用的 3D Demo 截图 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+这些文件既是论文中图表和结论的直接来源，也是后续迭代时最重要的输入边界。下一轮实验只需在已有目录结构上追加新的结果目录和日志文件，即可与当前版本形成可对照的实验历史。
 
 \section{本章小结}
 \label{sec:chap4_summary}
 
-本章详述了 Taste 系统各核心模块的工程实现。数据采集通过异步并发爬虫与三阶段清洗，将 3,241 条原始记录筛选为 2,103 条高质量实验样本（表 \ref{tab:dataset_stats}）；SkillRank 算法以 Sentence-BERT 编码、FAISS IVF 图构建、scipy.sparse 幂迭代和 HDBSCAN/UMAP 后处理四阶段完整落地（图 \ref{fig:skillrank_pipeline}）；AutoResearch 框架以单变量控制的迭代方式在约 12 分钟内完成 10 轮调优，将 Spearman $\rho$ 从初始 0.61 提升至 0.71（表 \ref{tab:autoresearch_trace}）；前端三维地形图提供端到端 P99 延迟低于 320ms 的流畅交互体验，并透明采集行为信号供系统持续自我优化。第五章将在此实现基础上进行系统性的实验评测与结果分析。
+本章从工程实现角度给出了 Taste 原型的完整落地方案：首先以 JSON 数据资产组织 10028 条 Skill 样本，并在其上构建 100 与 1000 两个实验子集；随后以双通道文本编码、Description 聚类、簇内 K-NN 图与 PageRank 融合评分实现 SkillRank 离线流水线；接着用 AutoResearch 保存了可复现的主调参轨迹；最后以 Plotly.js 完成真实三维语义地形 Demo，并将摘要、日志和截图统一保留到结果目录中。第五章将在这些真实产物的基础上，对排序效果、聚类稳定性与效率表现做定量分析。

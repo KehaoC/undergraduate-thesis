@@ -1,0 +1,66 @@
+[
+  {
+    "round": 0,
+    "parameter": "baseline",
+    "before": null,
+    "after": null,
+    "rho": -0.0158,
+    "accepted": true
+  },
+  {
+    "round": 1,
+    "parameter": "graph_k",
+    "before": 12,
+    "after": 10,
+    "rho": 0.0157,
+    "accepted": true
+  },
+  {
+    "round": 2,
+    "parameter": "similarity_floor",
+    "before": 0.1,
+    "after": 0.05,
+    "rho": 0.0248,
+    "accepted": true
+  },
+  {
+    "round": 3,
+    "parameter": "graph_k",
+    "before": 10,
+    "after": 8,
+    "rho": 0.0576,
+    "accepted": true
+  },
+  {
+    "round": 4,
+    "parameter": "similarity_floor",
+    "before": 0.05,
+    "after": 0.0,
+    "rho": 0.0727,
+    "accepted": true
+  },
+  {
+    "round": 5,
+    "parameter": "damping",
+    "before": 0.82,
+    "after": 0.85,
+    "rho": 0.0728,
+    "accepted": true
+  },
+  {
+    "round": 6,
+    "parameter": "damping",
+    "before": 0.85,
+    "after": 0.88,
+    "rho": 0.0788,
+    "accepted": true
+  },
+  {
+    "round": 7,
+    "parameter": "stop",
+    "before": null,
+    "after": null,
+    "rho": 0.0788,
+    "accepted": false
+  }
+]

@@ -1,0 +1,662 @@
+{
+  "dataset_stats": {
+    "skill_count": 1000,
+    "repo_count": 385,
+    "star_min": 1,
+    "star_max": 56336,
+    "star_median": 10.0,
+    "star_mean": 569.92,
+    "description_mean_chars": 328.3,
+    "content_mean_chars": 25193.55
+  },
+  "cluster_count": 20,
+  "cluster_labels": {
+    "0": "docs / documentation / documents",
+    "1": "requirements / sprint / use",
+    "2": "api / use / integration",
+    "3": "review / testing / quality",
+    "4": "skill / skills / existing",
+    "5": "monorepo / packages / performance",
+    "6": "optimization / energy / user",
+    "7": "work / tasks / manage",
+    "8": "ui / components / theme",
+    "9": "aws / cloudformation / aws cloudformation",
+    "10": "data / database / migration",
+    "11": "generate / image / design",
+    "12": "browser / web / setup",
+    "13": "agent / agents / multi",
+    "14": "github / docker / deployment",
+    "15": "design / plan / review",
+    "16": "code / patterns / development",
+    "17": "ai / agents / agent",
+    "18": "python / pytest / django",
+    "19": "content / seo / pages"
+  },
+  "ranking_comparison": {
+    "random": 0.0061,
+    "content_length": -0.0243,
+    "description_centroid": 0.0331,
+    "content_centroid": 0.0527,
+    "skillrank_initial": 0.0268,
+    "skillrank_tuned": 0.0519
+  },
+  "initial_metrics": {
+    "rho": 0.026832823790285964,
+    "graph_build_seconds": 0.0165,
+    "pagerank_seconds": 0.0028,
+    "iterations": 20.45,
+    "edge_count": 12000,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 10,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 8,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 5,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 6,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 7,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 8,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 9,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 10,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 11,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 12,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 13,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 14,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 15,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 16,
+        "nlist": 9,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 17,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 18,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 19,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 41,
+        "spearman_rho": -0.15357079584609687,
+        "p_value": 0.337747378631947,
+        "mean_star": 474.92681884765625
+      },
+      {
+        "cluster_id": 1,
+        "size": 56,
+        "spearman_rho": -0.0715834781417506,
+        "p_value": 0.6000885988372445,
+        "mean_star": 100.08928680419922
+      },
+      {
+        "cluster_id": 2,
+        "size": 93,
+        "spearman_rho": 0.19746293314986896,
+        "p_value": 0.05779697061123685,
+        "mean_star": 583.5376586914062
+      },
+      {
+        "cluster_id": 3,
+        "size": 73,
+        "spearman_rho": -0.12032643003773145,
+        "p_value": 0.31057549788962807,
+        "mean_star": 443.34246826171875
+      },
+      {
+        "cluster_id": 4,
+        "size": 66,
+        "spearman_rho": 0.25597988044020786,
+        "p_value": 0.03802747251945833,
+        "mean_star": 159.65151977539062
+      },
+      {
+        "cluster_id": 5,
+        "size": 52,
+        "spearman_rho": -0.12087108158555308,
+        "p_value": 0.3933480670676357,
+        "mean_star": 1129.59619140625
+      },
+      {
+        "cluster_id": 6,
+        "size": 50,
+        "spearman_rho": 0.23842977140532348,
+        "p_value": 0.09542395957011482,
+        "mean_star": 90.36000061035156
+      },
+      {
+        "cluster_id": 7,
+        "size": 34,
+        "spearman_rho": 0.008222676067158569,
+        "p_value": 0.9631880302444145,
+        "mean_star": 149.58824157714844
+      },
+      {
+        "cluster_id": 8,
+        "size": 34,
+        "spearman_rho": 0.04274691659138994,
+        "p_value": 0.8102980204701588,
+        "mean_star": 497.70587158203125
+      },
+      {
+        "cluster_id": 9,
+        "size": 29,
+        "spearman_rho": -0.17375370400501963,
+        "p_value": 0.3673664131057374,
+        "mean_star": 55.75862121582031
+      },
+      {
+        "cluster_id": 10,
+        "size": 83,
+        "spearman_rho": 0.0015507636464293783,
+        "p_value": 0.9888986946074731,
+        "mean_star": 310.3252868652344
+      },
+      {
+        "cluster_id": 11,
+        "size": 34,
+        "spearman_rho": 0.1227943655234792,
+        "p_value": 0.4890305597857974,
+        "mean_star": 179.7941131591797
+      },
+      {
+        "cluster_id": 12,
+        "size": 21,
+        "spearman_rho": 0.1527962755389753,
+        "p_value": 0.5084681179306897,
+        "mean_star": 370.8571472167969
+      },
+      {
+        "cluster_id": 13,
+        "size": 46,
+        "spearman_rho": -0.281043555410017,
+        "p_value": 0.05849057234809029,
+        "mean_star": 378.0
+      },
+      {
+        "cluster_id": 14,
+        "size": 44,
+        "spearman_rho": -0.053192831626241416,
+        "p_value": 0.731653723718664,
+        "mean_star": 111.13636016845703
+      },
+      {
+        "cluster_id": 15,
+        "size": 43,
+        "spearman_rho": 0.036329656715460644,
+        "p_value": 0.8170927560209522,
+        "mean_star": 5538.0234375
+      },
+      {
+        "cluster_id": 16,
+        "size": 83,
+        "spearman_rho": 0.1975086731781862,
+        "p_value": 0.0734899206819745,
+        "mean_star": 72.91566467285156
+      },
+      {
+        "cluster_id": 17,
+        "size": 50,
+        "spearman_rho": -0.10103967933638154,
+        "p_value": 0.4850661250109,
+        "mean_star": 320.1600036621094
+      },
+      {
+        "cluster_id": 18,
+        "size": 21,
+        "spearman_rho": -0.023426969954872565,
+        "p_value": 0.919712822097545,
+        "mean_star": 78.38095092773438
+      },
+      {
+        "cluster_id": 19,
+        "size": 47,
+        "spearman_rho": 0.07824051918247818,
+        "p_value": 0.6011490913047558,
+        "mean_star": 787.5531616210938
+      }
+    ]
+  },
+  "tuned_metrics": {
+    "rho": 0.051933259962519865,
+    "graph_build_seconds": 0.0173,
+    "pagerank_seconds": 0.0021,
+    "iterations": 12.9,
+    "edge_count": 18000,
+    "faiss": [
+      {
+        "cluster_id": 0,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 1,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 2,
+        "nlist": 10,
+        "nprobe": 10
+      },
+      {
+        "cluster_id": 3,
+        "nlist": 9,
+        "nprobe": 9
+      },
+      {
+        "cluster_id": 4,
+        "nlist": 8,
+        "nprobe": 8
+      },
+      {
+        "cluster_id": 5,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 6,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 7,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 8,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 9,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 10,
+        "nlist": 9,
+        "nprobe": 9
+      },
+      {
+        "cluster_id": 11,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 12,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 13,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 14,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 15,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 16,
+        "nlist": 9,
+        "nprobe": 9
+      },
+      {
+        "cluster_id": 17,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 18,
+        "nlist": 1,
+        "nprobe": 1
+      },
+      {
+        "cluster_id": 19,
+        "nlist": 1,
+        "nprobe": 1
+      }
+    ],
+    "cluster_rows": [
+      {
+        "cluster_id": 0,
+        "size": 41,
+        "spearman_rho": -0.10235534788550715,
+        "p_value": 0.5242540672238195,
+        "mean_star": 474.92681884765625
+      },
+      {
+        "cluster_id": 1,
+        "size": 56,
+        "spearman_rho": 0.055100099395134605,
+        "p_value": 0.6866994691362642,
+        "mean_star": 100.08928680419922
+      },
+      {
+        "cluster_id": 2,
+        "size": 93,
+        "spearman_rho": 0.1913673672203076,
+        "p_value": 0.06612985612338396,
+        "mean_star": 583.5376586914062
+      },
+      {
+        "cluster_id": 3,
+        "size": 73,
+        "spearman_rho": -0.07065747397564398,
+        "p_value": 0.5524979280321969,
+        "mean_star": 443.34246826171875
+      },
+      {
+        "cluster_id": 4,
+        "size": 66,
+        "spearman_rho": 0.27047969174439557,
+        "p_value": 0.02805459467582572,
+        "mean_star": 159.65151977539062
+      },
+      {
+        "cluster_id": 5,
+        "size": 52,
+        "spearman_rho": -0.13955336550904443,
+        "p_value": 0.3237849361245698,
+        "mean_star": 1129.59619140625
+      },
+      {
+        "cluster_id": 6,
+        "size": 50,
+        "spearman_rho": 0.3075233165618901,
+        "p_value": 0.029820581597340377,
+        "mean_star": 90.36000061035156
+      },
+      {
+        "cluster_id": 7,
+        "size": 34,
+        "spearman_rho": 0.01736486765452809,
+        "p_value": 0.9223503134185745,
+        "mean_star": 149.58824157714844
+      },
+      {
+        "cluster_id": 8,
+        "size": 34,
+        "spearman_rho": 0.007081875481629515,
+        "p_value": 0.968292495224359,
+        "mean_star": 497.70587158203125
+      },
+      {
+        "cluster_id": 9,
+        "size": 29,
+        "spearman_rho": -0.13251315319603157,
+        "p_value": 0.49318800470105084,
+        "mean_star": 55.75862121582031
+      },
+      {
+        "cluster_id": 10,
+        "size": 83,
+        "spearman_rho": 0.010699507970740629,
+        "p_value": 0.9235193181949911,
+        "mean_star": 310.3252868652344
+      },
+      {
+        "cluster_id": 11,
+        "size": 34,
+        "spearman_rho": 0.05734482485434649,
+        "p_value": 0.7473518825422747,
+        "mean_star": 179.7941131591797
+      },
+      {
+        "cluster_id": 12,
+        "size": 21,
+        "spearman_rho": 0.17518883316106648,
+        "p_value": 0.44751738270606256,
+        "mean_star": 370.8571472167969
+      },
+      {
+        "cluster_id": 13,
+        "size": 46,
+        "spearman_rho": -0.27560444929262734,
+        "p_value": 0.06375597203375355,
+        "mean_star": 378.0
+      },
+      {
+        "cluster_id": 14,
+        "size": 44,
+        "spearman_rho": -0.018778850784440197,
+        "p_value": 0.9036994616268716,
+        "mean_star": 111.13636016845703
+      },
+      {
+        "cluster_id": 15,
+        "size": 43,
+        "spearman_rho": 0.06089028252925519,
+        "p_value": 0.6981057256604348,
+        "mean_star": 5538.0234375
+      },
+      {
+        "cluster_id": 16,
+        "size": 83,
+        "spearman_rho": 0.22325263044249902,
+        "p_value": 0.04248219496753701,
+        "mean_star": 72.91566467285156
+      },
+      {
+        "cluster_id": 17,
+        "size": 50,
+        "spearman_rho": 0.00954663381846875,
+        "p_value": 0.9475378866558432,
+        "mean_star": 320.1600036621094
+      },
+      {
+        "cluster_id": 18,
+        "size": 21,
+        "spearman_rho": -0.05145660585865703,
+        "p_value": 0.8246945888588059,
+        "mean_star": 78.38095092773438
+      },
+      {
+        "cluster_id": 19,
+        "size": 47,
+        "spearman_rho": 0.08272399496447512,
+        "p_value": 0.5803971485747788,
+        "mean_star": 787.5531616210938
+      }
+    ]
+  },
+  "benchmarks": {
+    "faiss_seconds": 0.0195,
+    "exact_seconds": 0.004,
+    "speedup": 0.21,
+    "faiss_rho": 0.051933259962519865,
+    "exact_rho": 0.05328184492863351,
+    "rho_loss": 0.0013,
+    "faiss_iterations": 12.9,
+    "exact_iterations": 12.85
+  },
+  "cluster_sensitivity": [
+    {
+      "n_clusters": 16,
+      "max_cluster_size": 152,
+      "min_cluster_size": 10,
+      "rho": 0.0435
+    },
+    {
+      "n_clusters": 20,
+      "max_cluster_size": 93,
+      "min_cluster_size": 21,
+      "rho": 0.0519
+    },
+    {
+      "n_clusters": 24,
+      "max_cluster_size": 91,
+      "min_cluster_size": 3,
+      "rho": 0.0635
+    }
+  ],
+  "case_study": {
+    "cluster_id": 2,
+    "cluster_label": "api / use / integration",
+    "cluster_size": 93,
+    "rows": [
+      {
+        "skill_id": "5f3aa26aa2746370",
+        "name": "openapi-spec-generation",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 1.0,
+        "github_stars": 2,
+        "star_rank": 68,
+        "github_repo": "Microck/opendots-microck"
+      },
+      {
+        "skill_id": "5e4122a108a046a8",
+        "name": "integration-builder",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.9271,
+        "github_stars": 1142,
+        "star_rank": 4,
+        "github_repo": "open-mercato/open-mercato"
+      },
+      {
+        "skill_id": "ef6f0e2040c3c1ac",
+        "name": "frontend-ultimate",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.848,
+        "github_stars": 161,
+        "star_rank": 24,
+        "github_repo": "majiayu000/claude-skill-registry"
+      },
+      {
+        "skill_id": "2c9127a27c8fd5bf",
+        "name": "moai-lang-typescript",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.814,
+        "github_stars": 2,
+        "star_rank": 79,
+        "github_repo": "majiayu000/claude-skill-registry-data"
+      },
+      {
+        "skill_id": "4f128054bb53f416",
+        "name": "hono-routing",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.804,
+        "github_stars": 11,
+        "star_rank": 39,
+        "github_repo": "jackspace/ClaudeSkillz"
+      },
+      {
+        "skill_id": "5b2cd4b882614cbb",
+        "name": "stimulus",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.0066,
+        "github_stars": 4,
+        "star_rank": 49,
+        "github_repo": "ineersa/re-search"
+      },
+      {
+        "skill_id": "603b8f585fcbce96",
+        "name": "website-links",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.0008,
+        "github_stars": 33,
+        "star_rank": 34,
+        "github_repo": "moasq/nanowave"
+      },
+      {
+        "skill_id": "a393e0799677676f",
+        "name": "android-maps3d-sdk",
+        "cluster_id": 2,
+        "cluster_label": "api / use / integration",
+        "skillrank_score": 0.0,
+        "github_stars": 9,
+        "star_rank": 44,
+        "github_repo": "googlemaps-samples/android-maps3d-samples"
+      }
+    ]
+  }
+}

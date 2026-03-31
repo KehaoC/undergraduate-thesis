@@ -1,0 +1,42 @@
+[
+  {
+    "round": 0,
+    "parameter": "baseline",
+    "before": null,
+    "after": null,
+    "rho": -0.0084,
+    "accepted": true
+  },
+  {
+    "round": 1,
+    "parameter": "graph_k",
+    "before": 12,
+    "after": 10,
+    "rho": 0.0216,
+    "accepted": true
+  },
+  {
+    "round": 2,
+    "parameter": "similarity_floor",
+    "before": 0.1,
+    "after": 0.05,
+    "rho": 0.0433,
+    "accepted": true
+  },
+  {
+    "round": 3,
+    "parameter": "similarity_floor",
+    "before": 0.05,
+    "after": 0.0,
+    "rho": 0.06,
+    "accepted": true
+  },
+  {
+    "round": 4,
+    "parameter": "stop",
+    "before": null,
+    "after": null,
+    "rho": 0.06,
+    "accepted": false
+  }
+]

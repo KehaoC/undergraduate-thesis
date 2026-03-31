@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Taste Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Taste / Skill Terrain</p>
+          <h1>面向 Agent Skill 的语义地形发现 Demo</h1>
+          <p class="summary">
+            左侧地形图展示 1000 条 Skill 的语义位置与 SkillRank 高度，右侧输入任务描述后，系统会在语义邻域内按 SkillRank 返回推荐结果。
+          </p>
+        </div>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="workspace">
+        <div class="terrain-card">
+          <div class="card-head">
+            <div>
+              <p class="label">Semantic Terrain</p>
+              <h2>3D Skill Map</h2>
+            </div>
+            <p class="hint">支持拖拽旋转、滚轮缩放、点击查看节点</p>
+          </div>
+          <div id="terrain"></div>
+        </div>
+
+        <aside class="panel">
+          <div class="query-card">
+            <p class="label">Query Routing</p>
+            <h2>输入任务上下文</h2>
+            <textarea id="query" rows="5" placeholder="例如：帮我制定 SaaS 产品进入日本市场的市场进入策略"></textarea>
+            <div class="query-row">
+              <label for="k">返回数量</label>
+              <input id="k" type="range" min="3" max="12" value="6" />
+              <span id="k-value">6</span>
+            </div>
+            <button id="run-query">获取推荐</button>
+          </div>
+
+          <div class="result-card">
+            <div class="card-head compact">
+              <div>
+                <p class="label">Top Skills</p>
+                <h2>推荐结果</h2>
+              </div>
+            </div>
+            <div id="results" class="result-list"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+  </html>

@@ -1,0 +1,319 @@
+{
+  "generated_at": "2026-03-30 23:15:49",
+  "sizes": [
+    100
+  ],
+  "config": {
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "batch_size": 48,
+    "description_chars": 480,
+    "content_chars": 2400,
+    "graph_k": 12,
+    "damping": 0.82,
+    "nprobe": 8,
+    "max_iter": 60,
+    "tol": 1e-06,
+    "similarity_floor": 0.1,
+    "candidate_multiplier": 6,
+    "random_seed": 42
+  },
+  "datasets": {
+    "100": {
+      "dataset_stats": {
+        "skill_count": 100,
+        "repo_count": 54,
+        "star_min": 1,
+        "star_max": 3588,
+        "star_median": 10.0,
+        "star_mean": 207.01,
+        "description_mean_chars": 340.81,
+        "content_mean_chars": 25304.52
+      },
+      "cluster_count": 5,
+      "cluster_labels": {
+        "0": "security / azure / data",
+        "1": "pages / docs / github",
+        "2": "user / production / scheduling",
+        "3": "test / quality / qa",
+        "4": "diagrams / use / template"
+      },
+      "ranking_comparison": {
+        "random": 0.0001,
+        "content_length": -0.1501,
+        "description_centroid": -0.0405,
+        "content_centroid": 0.0284,
+        "skillrank_initial": -0.0943,
+        "skillrank_tuned": -0.0793
+      },
+      "initial_metrics": {
+        "rho": -0.09431240927227623,
+        "graph_build_seconds": 0.002,
+        "pagerank_seconds": 0.0001,
+        "iterations": 18,
+        "edge_count": 1200,
+        "faiss": {
+          "nlist": 10,
+          "nprobe": 8
+        },
+        "cluster_rows": [
+          {
+            "cluster_id": 0,
+            "size": 14,
+            "spearman_rho": -0.0022607892210167613,
+            "p_value": 0.993880025062868,
+            "mean_star": 347.78570556640625
+          },
+          {
+            "cluster_id": 1,
+            "size": 18,
+            "spearman_rho": -0.20403234428159595,
+            "p_value": 0.4167417076252602,
+            "mean_star": 439.8888854980469
+          },
+          {
+            "cluster_id": 2,
+            "size": 31,
+            "spearman_rho": -0.15169221737462432,
+            "p_value": 0.41529623408025956,
+            "mean_star": 167.4193572998047
+          },
+          {
+            "cluster_id": 3,
+            "size": 11,
+            "spearman_rho": 0.49702673280471504,
+            "p_value": 0.11985349781818945,
+            "mean_star": 17.18181800842285
+          },
+          {
+            "cluster_id": 4,
+            "size": 26,
+            "spearman_rho": -0.24968626935781438,
+            "p_value": 0.21864528173529063,
+            "mean_star": 97.5
+          }
+        ]
+      },
+      "tuned_metrics": {
+        "rho": -0.07931296826095574,
+        "graph_build_seconds": 0.0021,
+        "pagerank_seconds": 0.0001,
+        "iterations": 15,
+        "edge_count": 1200,
+        "faiss": {
+          "nlist": 10,
+          "nprobe": 10
+        },
+        "cluster_rows": [
+          {
+            "cluster_id": 0,
+            "size": 14,
+            "spearman_rho": 0.011303946105083807,
+            "p_value": 0.9694063804139654,
+            "mean_star": 347.78570556640625
+          },
+          {
+            "cluster_id": 1,
+            "size": 18,
+            "spearman_rho": -0.18615322132908493,
+            "p_value": 0.45955244543175,
+            "mean_star": 439.8888854980469
+          },
+          {
+            "cluster_id": 2,
+            "size": 31,
+            "spearman_rho": -0.14334405507615505,
+            "p_value": 0.44171879177831347,
+            "mean_star": 167.4193572998047
+          },
+          {
+            "cluster_id": 3,
+            "size": 11,
+            "spearman_rho": 0.49702673280471504,
+            "p_value": 0.11985349781818945,
+            "mean_star": 17.18181800842285
+          },
+          {
+            "cluster_id": 4,
+            "size": 26,
+            "spearman_rho": -0.2216316323513184,
+            "p_value": 0.2765387819674362,
+            "mean_star": 97.5
+          }
+        ]
+      },
+      "benchmarks": {
+        "faiss_seconds": 0.0024,
+        "exact_seconds": 0.0017,
+        "speedup": 0.71,
+        "faiss_rho": -0.07931296826095574,
+        "exact_rho": -0.07931296826095574,
+        "rho_loss": 0.0,
+        "faiss_iterations": 15,
+        "exact_iterations": 15
+      },
+      "cluster_sensitivity": [
+        {
+          "n_clusters": 4,
+          "max_cluster_size": 43,
+          "min_cluster_size": 9,
+          "rho": -0.1303
+        },
+        {
+          "n_clusters": 5,
+          "max_cluster_size": 31,
+          "min_cluster_size": 11,
+          "rho": -0.0793
+        },
+        {
+          "n_clusters": 9,
+          "max_cluster_size": 21,
+          "min_cluster_size": 1,
+          "rho": 0.0079
+        }
+      ],
+      "case_study": {
+        "cluster_id": 2,
+        "cluster_label": "user / production / scheduling",
+        "cluster_size": 31,
+        "rows": [
+          {
+            "skill_id": "e5bd27d62e891632",
+            "name": "builder-skill",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 1.0,
+            "github_stars": 161,
+            "star_rank": 8,
+            "github_repo": "majiayu000/claude-skill-registry"
+          },
+          {
+            "skill_id": "91b99d1b017b5c5a",
+            "name": "excoder-usage",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.8276,
+            "github_stars": 1,
+            "star_rank": 30,
+            "github_repo": "LJT-520/openClaw-backup"
+          },
+          {
+            "skill_id": "5b87e3b350418b80",
+            "name": "opsx-explore",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.4782,
+            "github_stars": 6,
+            "star_rank": 20,
+            "github_repo": "fjpulidop/specrails-core"
+          },
+          {
+            "skill_id": "f6c82e722e4e4d77",
+            "name": "babysitter-codex",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.4486,
+            "github_stars": 5,
+            "star_rank": 21,
+            "github_repo": "yaniv-tg/babysitter-codex"
+          },
+          {
+            "skill_id": "6e4c6c53a11b152a",
+            "name": "gsd-help",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.371,
+            "github_stars": 2,
+            "star_rank": 28,
+            "github_repo": "majiayu000/claude-skill-registry-data"
+          },
+          {
+            "skill_id": "5b47e624adfea9ba",
+            "name": "professor-fit-analyzer",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.0286,
+            "github_stars": 17,
+            "star_rank": 16,
+            "github_repo": "voidful/academic-skills"
+          },
+          {
+            "skill_id": "06df419bf34268c7",
+            "name": "test-engineer",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.0281,
+            "github_stars": 2,
+            "star_rank": 24,
+            "github_repo": "majiayu000/claude-skill-registry-data"
+          },
+          {
+            "skill_id": "34674acc764a6537",
+            "name": "record-keeping-documentation",
+            "cluster_id": 2,
+            "cluster_label": "user / production / scheduling",
+            "skillrank_score": 0.0,
+            "github_stars": 3588,
+            "star_rank": 1,
+            "github_repo": "openclaw/skills"
+          }
+        ]
+      }
+    }
+  },
+  "autoresearch_trace": [
+    {
+      "round": 0,
+      "parameter": "baseline",
+      "before": null,
+      "after": null,
+      "rho": -0.0943,
+      "accepted": true
+    },
+    {
+      "round": 1,
+      "parameter": "nprobe",
+      "before": 8,
+      "after": 12,
+      "rho": -0.0905,
+      "accepted": true
+    },
+    {
+      "round": 2,
+      "parameter": "damping",
+      "before": 0.82,
+      "after": 0.78,
+      "rho": -0.0871,
+      "accepted": true
+    },
+    {
+      "round": 3,
+      "parameter": "damping",
+      "before": 0.78,
+      "after": 0.72,
+      "rho": -0.0793,
+      "accepted": true
+    },
+    {
+      "round": 4,
+      "parameter": "stop",
+      "before": null,
+      "after": null,
+      "rho": -0.0793,
+      "accepted": false
+    }
+  ],
+  "tuned_config": {
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "batch_size": 48,
+    "description_chars": 480,
+    "content_chars": 2400,
+    "graph_k": 12,
+    "damping": 0.72,
+    "nprobe": 12,
+    "max_iter": 60,
+    "tol": 1e-06,
+    "similarity_floor": 0.1,
+    "candidate_multiplier": 6,
+    "random_seed": 42
+  }
+}

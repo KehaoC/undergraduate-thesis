@@ -1,0 +1,42 @@
+[
+  {
+    "round": 0,
+    "parameter": "baseline",
+    "before": null,
+    "after": null,
+    "rho": -0.0943,
+    "accepted": true
+  },
+  {
+    "round": 1,
+    "parameter": "nprobe",
+    "before": 8,
+    "after": 12,
+    "rho": -0.0905,
+    "accepted": true
+  },
+  {
+    "round": 2,
+    "parameter": "damping",
+    "before": 0.82,
+    "after": 0.78,
+    "rho": -0.0871,
+    "accepted": true
+  },
+  {
+    "round": 3,
+    "parameter": "damping",
+    "before": 0.78,
+    "after": 0.72,
+    "rho": -0.0793,
+    "accepted": true
+  },
+  {
+    "round": 4,
+    "parameter": "stop",
+    "before": null,
+    "after": null,
+    "rho": -0.0793,
+    "accepted": false
+  }
+]

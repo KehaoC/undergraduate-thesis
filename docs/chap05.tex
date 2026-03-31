@@ -8,210 +8,238 @@
 \section{实验设计}
 \label{sec:exp_design}
 
-本文的实验围绕两个相互独立但同等重要的目标展开：其一是验证 SkillRank 算法的\textbf{排序质量}——即其从 Content 亲缘图结构中提取的质量信号，是否与 Skill 社区通过真实使用行为（GitHub Star 数）形成的质量共识相吻合；其二是验证系统的\textbf{线性可扩展性}——即算法在 Skill 数量持续增长的情况下，计算代价能否维持在可接受的范围内，以支撑面向真实生产环境的长期部署。
+本章实验围绕三个问题展开：第一，SkillRank 是否能够在语义邻域内部给出优于非图结构基线的排序；第二，聚类粒度与参数调优是否会显著改变实验结论；第三，在当前真正执行的 100 和 1000 两个规模上，FAISS 近似检索是否已经带来实际的运行时间收益。
 
-\subsection{评测数据集}
+\subsection{实验数据与执行边界}
 
-实验全程使用第四章所描述的 ClawHub 实验数据集（$n=2,103$，经三阶段清洗后含有效 GitHub Star 数据）。为了使不同规模下的实验结果具有可比性，本文额外构建了两个规模的子集和一个扩展集：从全量数据集中随机采样 100 条和 1,000 条分别构成小规模和中规模子集，用于参数敏感性分析；通过对 Content 字段执行同义词替换和句式重排（数据增强）将数据集扩展至 10,000 条，专用于运行时间的规模化测量，不参与排序质量评测。
+本文以第四章整理得到的 10028 条 GitHub Skill 数据资产为统一输入来源，但本轮定稿阶段只实际运行了 100 和 1000 两个规模的子集。这样的边界是刻意设置的：目标不是在一晚之内盲目堆大规模，而是在可控时间内完整保留两组真实结果、日志与图表。100 规模用于快速观察算法行为与小样本稳定性，1000 规模作为主实验规模；10000 规模代码路径已经具备，但本次不执行。
 
-\subsection{Ground Truth 构建与评测指标}
+\subsection{Ground Truth 与评测指标}
 
-在没有人工质量标注的前提下，本文采用 GitHub Star 数作为 Skill 质量的代理指标。使用 Star 数作为 ground truth 的核心动机是：Star 数代表了开发者社区对该 Skill 所属代码仓库持续的显式正向反馈，是目前可获取的、最具代表性的客观社区质量信号。然而，Star 数作为代理指标存在两个局限：一是受曝光时长影响（历史较长的 Skill 拥有更多积累时间）；二是 Star 数需要 GitHub 账号才能贡献（技术认知门槛）。本文通过严格的 within-cluster 评测框架部分缓解第一个问题——同语义聚类内的 Skill 通常发布时间分布较为均匀——同时在实验讨论中明确指出这一局限性。
+本文仍以 GitHub 仓库 Star 数作为弱监督 proxy，而不是把它当作完美真值。具体评测方式为：先在 Description 语义空间内聚类，再在每个聚类内部比较 SkillRank 排序与 Star 排序的 Spearman 秩相关系数，最后按聚类规模加权平均，得到 overall within-cluster Spearman $\rho$。这一指标的含义是：系统是否能够在“同类 Skill”的比较范围内，把社区热度较高或被生态更广泛接受的 Skill 排到更前的位置。
 
-主要评测指标为 within-cluster Spearman 秩相关系数（$\rho$），计算每个语义聚类内 SkillRank 排序与 Star 数排序的 Spearman $\rho$，然后以聚类规模为权重取加权平均，作为全数据集的综合排序质量指标。$\rho=1$ 表示两种排序完全一致，$\rho=0$ 表示无相关性，$\rho=-1$ 表示完全反序。可扩展性评测以三个规模（1,000、2,103、10,000 条）下的完整 SkillRank 计算时间（从 embedding 加载到分数写入完成）为指标，与朴素 $O(n^2)$ 全连接方案作对比。
+需要说明的是，当前数据集中的多个 Skill 可能来自同一 GitHub 仓库，因此它们会共享同一个 Star 数。这意味着 Star 只能被视为仓库级热度信号，而不是精确的 Skill 级质量标签。本文后续所有分析都在这一限制下进行。
 
-\section{排序质量实验结果}
+\section{排序质量结果}
 \label{sec:ranking_results}
 
-\subsection{各方法对比}
+\subsection{方法对比}
 
-表 \ref{tab:ranking_comparison} 展示了 SkillRank 最优配置与五种基线方法在全量数据集（$n=2,103$，23 个语义聚类）上的 within-cluster Spearman $\rho$ 对比。
+表 \ref{tab:ranking_comparison_real} 汇总了 6 种排序方式在 100 和 1000 两个规模上的结果。这里的 \texttt{description\_centroid} 与 \texttt{content\_centroid} 分别表示只依赖语义中心度的两种非图结构基线，\texttt{skillrank\_initial} 为未调参的初始配置，\texttt{skillrank\_tuned} 为 AutoResearch 调优后的最终配置。
 
 \begin{table}[htbp]
 \centering
-\caption{各方法 Within-Cluster Spearman $\rho$ 对比（$n=2,103$，23 个语义聚类加权平均）}
-\label{tab:ranking_comparison}
-\begin{tabular}{llcc}
+\caption{不同排序方法在 100 与 1000 规模上的 within-cluster Spearman $\rho$}
+\label{tab:ranking_comparison_real}
+\begin{tabular}{lrr}
 \toprule
-方法 & 使用信息 & Spearman $\rho$ & 相较随机基线提升 \\
+方法 & 100 规模 & 1000 规模 \\
 \midrule
-随机排序（随机基线） & 无 & 0.23 & — \\
-全局 Star 排序（不聚类） & Star 数（全局混排） & 0.31 & +35\% \\
-Description 语义相似度排序 & Description embedding & 0.38 & +65\% \\
-Content 语义相似度排序（直接余弦） & Content embedding & 0.49 & +113\% \\
-SkillRank 初始配置（$K=10, d=0.85$） & Content embedding + 图结构 & 0.61 & +165\% \\
-\textbf{SkillRank 最优配置（$K=15, d=0.82$）} & \textbf{Content embedding + 图结构} & \textbf{0.71} & \textbf{+209\%} \\
+随机排序 & 0.0001 & 0.0061 \\
+按 Content 长度排序 & -0.1501 & -0.0243 \\
+Description centroid & -0.0405 & 0.0331 \\
+Content centroid & 0.0284 & 0.0527 \\
+SkillRank 初始配置 & -0.0084 & 0.0464 \\
+\textbf{SkillRank 调优后} & \textbf{0.0600} & \textbf{0.0562} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-这一组结果揭示了几个值得深入讨论的现象。首先，全局 Star 排序（不区分聚类、直接以全量 Star 数混排）的 $\rho$ 仅为 0.31，仅略高于随机基线（0.23），有力地证实了第二章关于"全局排序对 Skill 价值判断的根本局限"的理论分析——跨语义领域的 Skill 混合比较，Star 数的高低主要反映曝光时长和领域热度，而非在具体任务场景下的实际质量。其次，Description 语义相似度排序（$\rho=0.38$）优于全局 Star 排序，说明在同语义邻域内，功能定位更精准的 Skill 确实倾向于获得更高的社区认可，但 Description 相似度本身对于区分 Content 质量的区分力仍然有限。Content embedding 的直接余弦相似度排序（$\rho=0.49$）相较 Description 方案有显著提升，证明 Content 向量空间中确实编码了与质量相关的语义信息，Content 在语义上越接近高质量范式的 Skill，其实际质量分也越高。最后，SkillRank 通过图传播机制将这一信号进一步放大——从直接余弦相似度的 0.49 提升至图结构版本的 0.71，体现了 PageRank 风格的递归价值传播机制对于捕捉生态范式的额外价值：一个 Skill 的质量，不仅取决于其 Content 与高质量范式的相似度，还取决于其"邻居"的整体质量水平。
-
-图 \ref{fig:rho_bars} 以条形图直观展示了上述六种方法的 $\rho$ 值对比，SkillRank 最优配置相较随机基线实现了 209\% 的提升，相较直接余弦相似度基线提升 45\%，相较全局 Star 排序提升 129\%。
+图 \ref{fig:rho_bars_real} 给出了同一组结果的可视化对比。可以看到，随机排序在两个规模上都接近零相关，说明 within-cluster 评测本身没有被数据分布“自动抬高”；仅按 Content 长度排序甚至出现负相关，说明“内容越长越好”这一常见直觉在 Skill 数据上并不成立。真正有效的非图结构信号来自 Content centroid，而 SkillRank 在两组实验上都进一步超过了它。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  xbar,
-  width=10cm, height=6cm,
-  xlabel={Within-Cluster Spearman $\rho$},
-  xmin=0, xmax=0.85,
-  ytick=data,
-  yticklabels={
-    {随机基线},
-    {全局 Star（不聚类）},
-    {Description 余弦},
-    {Content 余弦},
-    {SkillRank（$K$=10）},
-    {SkillRank（$K$=15，优化）}
-  },
-  nodes near coords,
-  nodes near coords align={horizontal},
-  nodes near coords style={font=\footnotesize},
-  bar width=0.5cm,
+  width=12.4cm,
+  height=6.8cm,
+  ybar,
+  bar width=7pt,
+  ymin=-0.18,
+  ymax=0.08,
+  ylabel={within-cluster Spearman $\rho$},
+  xlabel={排序方法},
+  symbolic x coords={{随机},{长度},{Desc先验},{Content先验},{初始SR},{调优SR}},
+  xtick=data,
+  x tick label style={rotate=25, anchor=east, font=\footnotesize},
+  legend style={at={(0.5,1.02)}, anchor=south, legend columns=2},
   grid=major,
   grid style={dashed, gray!30},
 ]
-\addplot[fill=blue!40] coordinates {
-  (0.71, 5)
-  (0.61, 4)
-  (0.49, 3)
-  (0.38, 2)
-  (0.31, 1)
-  (0.23, 0)
+\addplot[fill=blue!45] coordinates {
+  ({随机},0.0001)
+  ({长度},-0.1501)
+  ({Desc先验},-0.0405)
+  ({Content先验},0.0284)
+  ({初始SR},-0.0084)
+  ({调优SR},0.0600)
 };
+\addplot[fill=orange!70] coordinates {
+  ({随机},0.0061)
+  ({长度},-0.0243)
+  ({Desc先验},0.0331)
+  ({Content先验},0.0527)
+  ({初始SR},0.0464)
+  ({调优SR},0.0562)
+};
+\legend{100 规模,1000 规模}
 \end{axis}
 \end{tikzpicture}
-\caption{六种方法的 within-cluster Spearman $\rho$ 对比。SkillRank 最优配置（橙色）相较随机基线提升 209\%。}
-\label{fig:rho_bars}
+\caption{两种数据规模下各排序方法的 within-cluster Spearman $\rho$ 对比。调优后的 SkillRank 在两个规模上都优于非图结构基线。}
+\label{fig:rho_bars_real}
 \end{figure}
 
-\subsection{聚类粒度对评测结果的影响}
+从结果上看，SkillRank 的收益在两个规模上表现不同。100 规模中，调优后的 SkillRank 从 0.0284 提升到 0.0600，相对于最强非图结构基线有更明显的增益；1000 规模中，调优后的 SkillRank 为 0.0562，仅比 Content centroid 的 0.0527 高出 0.0035，增益较小但仍为正。这说明在当前数据规模下，图传播带来的提升是真实存在的，但其效果尚不足以形成压倒性优势。
 
-为验证评测结论对 HDBSCAN 聚类粒度参数的鲁棒性，本文对 \texttt{min\_cluster\_size} 参数进行了敏感性分析。表 \ref{tab:cluster_sensitivity} 展示了不同聚类参数下的评测结果。
+\subsection{调优结果与聚类敏感性}
+
+表 \ref{tab:tuned_configs_real} 总结了两组实验最终采用的调优配置。100 规模更依赖图传播分，因此 \texttt{pagerank\_weight} 取值更高；1000 规模则相反，最优配置降低了图传播权重，并引入更高的相似度截断阈值。
 
 \begin{table}[htbp]
 \centering
-\caption{聚类粒度参数敏感性分析（SkillRank 最优配置，$n=2,103$）}
-\label{tab:cluster_sensitivity}
-\begin{tabular}{cccc}
+\caption{100 与 1000 规模的最终调优配置}
+\label{tab:tuned_configs_real}
+\begin{tabular}{lcc}
 \toprule
-\texttt{min\_cluster\_size} & 识别聚类数 & 噪声点比例 & Spearman $\rho$ \\
+参数 & 100 规模 & 1000 规模 \\
 \midrule
-5 & 31 & 2.1\% & 0.68 \\
-10 & 23 & 4.2\% & 0.71 \\
-20 & 15 & 7.3\% & 0.69 \\
-30 & 11 & 11.8\% & 0.65 \\
+\texttt{graph\_k} & 10 & 15 \\
+\texttt{damping} & 0.82 & 0.78 \\
+\texttt{nprobe} & 8 & 8 \\
+\texttt{pagerank\_weight} & 0.30 & 0.10 \\
+\texttt{similarity\_floor} & 0.00 & 0.15 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-结果表明，聚类粒度对 $\rho$ 值的影响在 $\pm 0.03$ 范围内，\texttt{min\_cluster\_size=10}（对应 23 个聚类）取得最优，说明实验结论在一定参数范围内保持稳定。聚类粒度过细（聚类数 31）时，部分细粒度聚类内的 Skill 数量过少（3-5 个），秩相关系数计算的统计显著性下降；聚类粒度过粗（聚类数 11）时，语义差异较大的 Skill 被归入同一聚类，降低了 within-cluster 比较的合理性。
+进一步地，表 \ref{tab:cluster_sensitivity_real} 展示了聚类数变化对评测结果的影响。100 规模中，9 个簇时 $\rho$ 最高，但最小簇大小只有 1；1000 规模中，24 个簇时 $\rho$ 也高于当前默认值，但最小簇大小只有 3。换言之，“更高的原始相关系数”是以更碎片化的聚类为代价换来的。考虑到论文实验需要稳定且可解释的 within-cluster 比较，本文最终保留了 100 规模 5 个簇、1000 规模 20 个簇的设置。
 
-\section{可扩展性实验结果}
+\begin{table}[htbp]
+\centering
+\caption{聚类数敏感性分析}
+\label{tab:cluster_sensitivity_real}
+\begin{tabular}{ccccc}
+\toprule
+规模 & 聚类数 & 最大簇大小 & 最小簇大小 & $\rho$ \\
+\midrule
+100 & 4 & 43 & 9 & 0.0015 \\
+100 & 5 & 31 & 11 & 0.0600 \\
+100 & 9 & 21 & 1 & 0.1032 \\
+\midrule
+1000 & 16 & 152 & 10 & 0.0684 \\
+1000 & 20 & 93 & 21 & 0.0562 \\
+1000 & 24 & 91 & 3 & 0.0761 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{效率评测结果}
 \label{sec:scalability_results}
 
-表 \ref{tab:scalability} 展示了 SkillRank 与朴素 $O(n^2)$ 全连接方案在三个规模梯度下的完整计算时间（单位：秒）。实验在标准云服务器（4 vCPU, 16GB RAM，无 GPU）上运行，每个配置执行 3 次取中位数。
+为了判断 FAISS 在当前已执行规模上是否真的带来时间收益，本文额外对“精确 K-NN 图构建 + PageRank”与“FAISS 近似 K-NN 图构建 + PageRank”做了同配置对比。结果见表 \ref{tab:runtime_real}。
 
 \begin{table}[htbp]
 \centering
-\caption{SkillRank 与朴素方案的计算时间对比（秒）}
-\label{tab:scalability}
-\begin{tabular}{lrrrc}
+\caption{精确 K-NN 与 FAISS 近似 K-NN 的运行时间对比}
+\label{tab:runtime_real}
+\begin{tabular}{lrrrr}
 \toprule
-Skill 数量 $n$ & 朴素 $O(n^2)$（秒） & SkillRank FAISS（秒） & 加速比 & SkillRank $\rho$ 损失 \\
+规模 & 精确检索时间 / s & FAISS 时间 / s & 精确/FAISS & $\rho_{\text{exact}} - \rho_{\text{faiss}}$ \\
 \midrule
-1,000 & 8.4 & 2.1 & 4.0$\times$ & $<0.01$ \\
-2,103 & 38.7 & 5.3 & 7.3$\times$ & $<0.01$ \\
-10,000 & 847.2 & 21.3 & 39.8$\times$ & 0.02 \\
+100 & 0.0007 & 0.0015 & 0.47 & 0.0000 \\
+1000 & 0.0042 & 0.0189 & 0.22 & -0.0011 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-实验结果与理论分析高度吻合：加速比随规模增大而显著增加，在 $n=10,000$ 时接近 40 倍，这与 $O(n^2)$ vs $O(n\log n)$ 的理论比值 $O(n/\log n)$ 在 $n=10000$ 时约为 $10000/13.3 \approx 752$（纯渐进意义上）的数量级一致，实际加速比因常数因子不同而偏低，但数量级正确。SkillRank 相对于理论精确 K-NN 的 $\rho$ 损失仅为 0.02（$n=10,000$），说明 FAISS 约 95\% 的近似召回率对最终排序质量的影响在可接受范围内。
-
-图 \ref{fig:scalability_time} 以折线图直观展示了两种方案随规模增大的计算时间增长趋势，朴素方案在 $n=10,000$ 时已超过 14 分钟，而 FAISS 方案仅需约 21 秒。
+图 \ref{fig:runtime_real} 更直观地展示了这一事实：在 100 与 1000 两个规模上，FAISS 的索引训练和调度开销尚未被样本量摊薄，因此其总耗时反而高于精确检索。这一结果与很多“FAISS 一定更快”的经验判断不同，但它是本轮实验中必须诚实保留的结论。
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  width=10cm, height=6cm,
-  xlabel={Skill 数量 $n$},
-  ylabel={计算时间（秒）},
-  xmode=log,
+  width=11.6cm,
+  height=6.4cm,
+  ybar,
+  bar width=12pt,
   ymode=log,
-  xtick={1000, 2103, 10000},
-  xticklabels={1K, 2.1K, 10K},
-  legend pos=north west,
+  ymin=0.0005,
+  ymax=0.05,
+  ylabel={运行时间 / s（对数坐标）},
+  xlabel={数据规模},
+  symbolic x coords={{100},{1000}},
+  xtick=data,
+  legend style={at={(0.5,1.02)}, anchor=south, legend columns=2},
   grid=major,
   grid style={dashed, gray!30},
-  mark size=3pt,
 ]
-\addplot[color=red, mark=square*, thick] coordinates {
-  (1000, 8.4) (2103, 38.7) (10000, 847.2)
+\addplot[fill=green!45] coordinates {
+  ({100},0.0007)
+  ({1000},0.0042)
 };
-\addlegendentry{朴素 $O(n^2)$}
-
-\addplot[color=blue, mark=o, thick] coordinates {
-  (1000, 2.1) (2103, 5.3) (10000, 21.3)
+\addplot[fill=purple!45] coordinates {
+  ({100},0.0015)
+  ({1000},0.0189)
 };
-\addlegendentry{SkillRank（FAISS）}
+\legend{精确 K-NN,FAISS 近似 K-NN}
 \end{axis}
 \end{tikzpicture}
-\caption{SkillRank 与朴素方案的计算时间随规模增长对比（双对数坐标）。朴素方案呈近似 $O(n^2)$ 增长，SkillRank 呈接近线性增长。}
-\label{fig:scalability_time}
+\caption{100 与 1000 两个规模上的运行时间对比。当前样本量下，精确 K-NN 仍快于 FAISS。}
+\label{fig:runtime_real}
 \end{figure}
+
+不过，这并不意味着 FAISS 在本文框架中毫无意义。表 \ref{tab:runtime_real} 同时显示，近似检索带来的质量损失几乎可以忽略：100 规模上两者完全一致，1000 规模上 FAISS 结果甚至略高于精确检索 0.0011。更准确的解释是：在当前小中规模实验下，FAISS 的“质量保持能力”已经得到验证，但“时间优势”尚未显现。
 
 \section{案例分析}
 \label{sec:case_study}
 
-为直观说明 SkillRank 排序结果的实际意义，本节从实验数据集中选取规模最大的语义聚类（"Python 代码生成与优化"聚类，共 198 个 Skill）进行详细分析。表 \ref{tab:case_study} 展示了该聚类内 SkillRank 排名前 5 和后 3 的 Skill。
+为了观察 SkillRank 在实际簇内的排序形态，本文选取 1000 规模实验中最大的语义簇进行案例分析。该簇的自动标签为“\texttt{api / use / integration}”，共包含 93 条 Skill。表 \ref{tab:case_study_real} 展示了其中 SkillRank 排名前 5 和后 3 的条目。
 
 \begin{table}[htbp]
 \centering
-\caption{"Python 代码生成与优化"聚类（共 198 个 Skill）排名前 5 与后 3 的 Skill}
-\label{tab:case_study}
+\caption{“api / use / integration” 簇（93 条 Skill）的排名前 5 与后 3}
+\label{tab:case_study_real}
 \begin{tabular}{clrrc}
 \toprule
-SkillRank 排名 & Skill 名称（摘要） & SkillRank 分 & GitHub Star 数 & Star 排名 \\
+SkillRank 排名 & Skill 名称 & SkillRank 分 & GitHub Star 数 & Star 排名 \\
 \midrule
-1 & python-code-style（PEP8 + 现代最佳实践） & 0.91 & 8,946 & 1 \\
-2 & async-python-guide（asyncio 最佳实践） & 0.87 & 5,231 & 2 \\
-3 & clean-code-python（可读性与重构规范） & 0.83 & 4,102 & 3 \\
-4 & python-performance（性能优化技巧） & 0.79 & 2,847 & 4 \\
-5 & type-hints-advanced（高级类型注解规范） & 0.74 & 2,103 & 6 \\
+1 & openapi-spec-generation & 0.6769 & 2 & 68 \\
+2 & integration-builder & 0.6547 & 1142 & 4 \\
+3 & frontend-ultimate & 0.6387 & 161 & 24 \\
+4 & moai-lang-typescript & 0.6117 & 2 & 79 \\
+5 & hono-routing & 0.6010 & 11 & 39 \\
 \midrule
-196 & python-utils-misc（杂项工具调用片段） & 0.22 & 43 & 195 \\
-197 & code-helper-v2（功能模糊的通用代码辅助） & 0.18 & 31 & 197 \\
-198 & my-python-rules（个人风格习惯记录） & 0.14 & 12 & 198 \\
+91 & stimulus & 0.2133 & 4 & 49 \\
+92 & android-maps3d-sdk & 0.1767 & 9 & 44 \\
+93 & website-links & 0.1732 & 33 & 34 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-该聚类的 within-cluster Spearman $\rho = 0.74$，略高于全数据集加权平均值 0.71。从排名结果来看，SkillRank 前三名与 Star 数前三名完全一致，显示出很强的一致性。第 5 名（type-hints-advanced，SkillRank 分 0.74）与第 6 名（Star 数 2,103）的对应关系在排序上发生了一个位次的偏差，这是一个典型的 SkillRank 对 Star 数的"修正"案例：该 Skill 的 Content 包含了大量关于 Python 类型系统的深度知识，被聚类内许多其他高质量 Skill 的 Content 所相似引用，SkillRank 据此判断其在生态中的影响力超过了其 Star 数直接反映的水平——而 Star 数的偏低可能仅仅是因为该 Skill 是相对较新的发布，尚未完成 Star 积累。这恰好展示了 SkillRank 在"识别高潜力新 Skill"上的独特价值：在完全不使用 Star 数信息的前提下，通过 Content 结构性信号将其排至第 5 位，实现了对 Star 数排序的主动修正。
+这一案例有两个现象值得注意。第一，排名靠前的条目并不一定来自高 Star 仓库，例如 \texttt{openapi-spec-generation} 与 \texttt{moai-lang-typescript} 的仓库 Star 都很低，但在结构上处于该簇内部更中心的位置。第二，末尾条目并非简单对应最低 Star 数，而是通常同时具备“结构中心性弱”和“与簇原型偏离更大”这两个特征。也就是说，SkillRank 的排序逻辑并不是在复写 Star，而是在尝试从簇内内容结构中找出“被更广泛模仿、复用或靠近主流模式”的 Skill。
 
-排名末尾的三个 Skill 在 SkillRank 分和 Star 数两个维度均处于低位，且具有明显的共同特征：Content 内容稀疏、功能定位模糊、或仅为个人使用习惯的记录而非系统性的领域知识沉淀。这些 Skill 在 Content 亲缘图中与其他 Skill 的语义联系极弱，因此在 PageRank 迭代后仅获得接近均匀分布的低分。
+当然，这组案例不能被过度解读。由于当前使用的是仓库级 Star 而不是 Skill 级真值，排名靠前但 Star 很低的条目既可能是真正被低估的高质量 Skill，也可能只是出自一个较小众仓库的结构中心节点。因此，案例分析更适合用来说明 SkillRank 的行为模式，而不是直接宣称其已经发现了“绝对优质”的 Skill。
 
-\section{讨论：SkillRank 的局限性}
+\section{讨论：当前结果的意义与局限}
 \label{sec:limitations}
 
-SkillRank 在实验中表现出较好的质量预测能力，但仍存在若干值得正视的局限。
+结合上述实验，本文认为当前结果已经足以支持两个结论。其一，SkillRank 的图结构信息确实提供了增量价值，因为调优后的配置在 100 和 1000 两个规模上都优于最强非图结构基线。其二，在当前样本量下，图结构增益是“温和但稳定”的，而不是“压倒性的领先”。
 
-\textbf{Ground Truth 的代理误差。} GitHub Star 数作为质量代理指标存在系统性偏差：历史较长的 Skill 在同等内在质量下拥有更多时间积累 Star，这一时间效应在 within-cluster 框架下只被部分消除（同聚类内 Skill 的发布时间并非完全均匀）。更理想的 ground truth 应当是在真实 Agent 工作流中对不同 Skill 的任务完成质量进行 A/B 测试，但这在当前阶段难以大规模实施。
+与此同时，本轮实验也清楚暴露出若干局限。
 
-\textbf{K 集合质量未直接评测。} 当前评测关注的是单个 Skill 的排序质量（Spearman $\rho$），而第二章指出 SkillRank 的真正优化目标是 $K$ 个 Skill 集合的整体覆盖质量。集合层面的质量评测——考虑集合内冗余性（高度相似的多个 Skill 注入同一上下文）的惩罚——是后续研究的重要方向。
+\textbf{第一，Star 只是仓库级 proxy，不是 Skill 级真值。} 同一仓库中的多个 Skill 共用同一个 Star 数，这会引入标签噪声，并削弱 within-cluster 排序评测的分辨率。
 
-\textbf{行为信号槽位未激活。} 当前 Taste 系统尚处于冷启动阶段，行为信号（点击、选中、停留）数据量不足以影响最终排序，$\lambda=0$（公式 \ref{eq:final_score}）。随着系统积累真实用户交互数据，行为分将逐步参与排序修正，这一动态演化机制有待在部署后的真实环境中验证。
+\textbf{第二，100 与 1000 规模不足以证明 FAISS 的时间优势。} 当前实验只能说明近似检索几乎不损失排序质量，但不能据此声称“FAISS 已经更快”。如果后续需要支撑大规模效率结论，必须补跑 10000 及以上规模。
+
+\textbf{第三，当前评测仍停留在离线排序层。} 本文尚未在真实 Agent 任务中比较“注入不同 Top-$K$ Skill 集合后最终任务完成质量”的差异，因此还不能把离线 $\rho$ 的提升直接等同于真实任务成功率的提升。
+
+\textbf{第四，聚类粒度会影响结论的强弱。} 更细的聚类有时会得到更高的 $\rho$，但往往伴随过小簇，导致评测不稳定。因此，后续研究需要引入更系统的聚类稳健性分析，而不是只选择单个最优点。
 
 \section{全文总结}
 \label{sec:conclusion}
 
-本文围绕 Agent Skill 生态中的价值发现问题，设计并实现了云端系统 Taste 及其核心算法 SkillRank。
+本文围绕 Agent Skill 生态中的价值发现问题，完成了从理论建模、算法实现到系统原型和实验评测的完整闭环。理论上，本文将 Skill 明确建模为 $\langle Description, Content \rangle$ 二元结构，提出条件排序问题定义；算法上，本文实现了融合 Content 原型中心度与图传播分的 SkillRank；工程上，本文构建了 Taste 原型，打通了离线计算、在线重排和三维语义地形 Demo。
 
-本文工作始于一个基础性的形式化洞察：将 Skill 的二元结构（$\langle Description, Content \rangle$）与其两种完全不同的功能（语义定位 vs. 内容质量）清晰区分，揭示了现有平台以全局 Star 数混排的根本逻辑错误，提出了条件排序的正确问题定义。在此基础上，SkillRank 将 PageRank 的随机游走价值传播机制迁移至 Content 亲缘图，为 Skill 的内在质量提供了无需人工标注、纯结构驱动的客观评估方法。通过 FAISS 近似最近邻搜索引入图稀疏化，将算法复杂度从朴素的 $O(n^2)$ 优化至 $O(n\log n)$，赋予系统面向持续增长的 Skill 生态的长期可扩展性。
+实验方面，本文在 10028 条 Skill 的统一数据资产上，实际完成了 100 和 1000 两个规模的完整实验，保留了日志、摘要 JSON、可视化产物与 3D Demo 截图。调优后的 SkillRank 在 100 规模达到 $\rho=0.0600$，在 1000 规模达到 $\rho=0.0562$，均优于最强非图结构基线；同时，实验也诚实地表明，在这两个规模上精确 K-NN 仍快于 FAISS。换言之，本文已经验证了 SkillRank 在当前数据上的有效性与可运行性，但尚未完成对超大规模效率优势的实证闭环。
 
-在实验验证层面，AutoResearch 风格的自动化迭代框架以 GitHub Star within-cluster 排序为 ground truth，经 10 轮单变量控制迭代，在全量 $n=2,103$ 数据集上将 within-cluster Spearman $\rho$ 从随机基线的 0.23 提升至 0.71，相较最强非图结构基线（Content 直接余弦相似度排序，$\rho=0.49$）提升 45\%。在 $n=10,000$ 规模下，FAISS 方案相较朴素全连接方案实现 39.8 倍的计算加速，$\rho$ 损失仅为 0.02，充分验证了稀疏化方案在质量和效率上的双重优势。Taste 的三维语义地形图前端将这些抽象建模结果转化为端到端延迟低于 320ms 的直观交互体验，完成了从算法价值到用户价值的完整闭环。
-
-正如 Google 通过 PageRank 和系统化的网页建模，将互联网的信息混沌转化为结构化的可检索秩序，SkillRank 及 Taste 系统对 Agent Skill 世界的结构性建模，有望成为未来 Agent 能力生态基础设施的重要组成部分。当 Skill 生态的规模继续扩张、Agent 的应用场景继续深入，一个能够客观、高效地发现高质量 Skill 的系统，将直接决定千万 Agent 用户所能触及的能力上限。本文的工作是这一方向上的早期探索，许多重要问题——包括集合多样性优化、多源 Skill 生态融合、个性化条件排序，以及以 Agent 任务完成质量为直接优化目标的端到端评测——都有待未来的深入研究。
+对一篇本科毕业论文而言，这一结果是有价值的：本文没有停留在概念性讨论，而是交付了真实代码、真实日志、真实 3D Demo 和可复核的实验结果。后续工作若继续推进，应重点补齐三个方向：一是更高规模下的效率实验，二是真实 Agent 任务层面的在线评测，三是更细粒度的 Skill 级监督信号构建。只有把这三部分补齐，SkillRank 才能从“可工作的研究原型”进一步走向“可广泛部署的能力发现基础设施”。

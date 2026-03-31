@@ -1,0 +1,50 @@
+[
+  {
+    "round": 0,
+    "parameter": "baseline",
+    "before": null,
+    "after": null,
+    "rho": 0.0464,
+    "accepted": true
+  },
+  {
+    "round": 1,
+    "parameter": "pagerank_weight",
+    "before": 0.3,
+    "after": 0.1,
+    "rho": 0.0516,
+    "accepted": true
+  },
+  {
+    "round": 2,
+    "parameter": "graph_k",
+    "before": 12,
+    "after": 15,
+    "rho": 0.0527,
+    "accepted": true
+  },
+  {
+    "round": 3,
+    "parameter": "similarity_floor",
+    "before": 0.1,
+    "after": 0.15,
+    "rho": 0.0549,
+    "accepted": true
+  },
+  {
+    "round": 4,
+    "parameter": "damping",
+    "before": 0.82,
+    "after": 0.78,
+    "rho": 0.0562,
+    "accepted": true
+  },
+  {
+    "round": 5,
+    "parameter": "stop",
+    "before": null,
+    "after": null,
+    "rho": 0.0562,
+    "accepted": false
+  }
+]
